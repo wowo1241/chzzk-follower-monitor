@@ -1,28 +1,19 @@
 function getCookie(req, name) {
     const cookieHeader = req.headers.cookie || "";
+
     const cookies = cookieHeader
         .split(";")
         .map(item => item.trim());
 
     for (const cookie of cookies) {
-
-        const separator =
-            cookie.indexOf("=");
+        const separator = cookie.indexOf("=");
 
         if (separator === -1) {
             continue;
         }
 
-        const key =
-            cookie.substring(
-                0,
-                separator
-            );
-
-        const value =
-            cookie.substring(
-                separator + 1
-            );
+        const key = cookie.substring(0, separator);
+        const value = cookie.substring(separator + 1);
 
         if (key === name) {
             return decodeURIComponent(value);
@@ -41,56 +32,43 @@ function sendJson(res, status, data) {
 export default async function handler(req, res) {
 
     if (req.method !== "GET") {
-
         return sendJson(res, 405, {
             error: "GET 요청만 허용됩니다."
         });
-
     }
 
 
     try {
 
         // ========================================
-        // 1. 우리 홈페이지 로그인 세션
+        // 1. 홈페이지 로그인 세션
         // ========================================
 
         const session =
-            getCookie(
-                req,
-                "chzzk_session"
-            );
+            getCookie(req, "chzzk_session");
 
 
         if (!session) {
-
             return sendJson(res, 401, {
-                error: "로그인이 필요합니다."
+                error: "로그인 세션이 없습니다."
             });
-
         }
 
 
         let sessionData;
 
-
         try {
 
-            sessionData =
-                JSON.parse(
-                    Buffer
-                        .from(
-                            session,
-                            "base64"
-                        )
-                        .toString("utf8")
-                );
+            sessionData = JSON.parse(
+                Buffer
+                    .from(session, "base64")
+                    .toString("utf8")
+            );
 
-        } catch {
+        } catch (error) {
 
             return sendJson(res, 401, {
-                error:
-                    "로그인 세션이 올바르지 않습니다."
+                error: "로그인 세션을 읽을 수 없습니다."
             });
 
         }
@@ -103,36 +81,45 @@ export default async function handler(req, res) {
         if (!accessToken) {
 
             return sendJson(res, 401, {
-                error:
-                    "Access Token이 없습니다."
+                error: "Access Token이 없습니다."
             });
 
         }
 
 
         // ========================================
-        // 2. 현재 로그인한 채널 확인
+        // 2. 로그인한 채널 ID
         // ========================================
 
-        const userResponse =
-            await fetch(
-                "https://openapi.chzzk.naver.com/open/v1/users/me",
-                {
-                    method: "GET",
+        const userResponse = await fetch(
+            "https://openapi.chzzk.naver.com/open/v1/users/me",
+            {
+                method: "GET",
 
-                    headers: {
-                        "Authorization":
-                            `Bearer ${accessToken}`,
+                headers: {
+                    "Authorization":
+                        `Bearer ${accessToken}`,
 
-                        "Content-Type":
-                            "application/json"
-                    }
+                    "Content-Type":
+                        "application/json"
                 }
-            );
+            }
+        );
 
 
-        const userData =
-            await userResponse.json();
+        const userText =
+            await userResponse.text();
+
+
+        let userData;
+
+        try {
+            userData = JSON.parse(userText);
+        } catch {
+            userData = {
+                raw: userText
+            };
+        }
 
 
         if (
@@ -141,7 +128,8 @@ export default async function handler(req, res) {
         ) {
 
             console.error(
-                "CHZZK user API error:",
+                "USER API ERROR:",
+                userResponse.status,
                 userData
             );
 
@@ -150,9 +138,14 @@ export default async function handler(req, res) {
                 res,
                 userResponse.status || 500,
                 {
+                    success: false,
+
                     error:
-                        userData.message ||
-                        "CHZZK 사용자 정보를 가져오지 못했습니다."
+                        userData?.message ||
+                        "CHZZK 사용자 정보를 가져오지 못했습니다.",
+
+                    response:
+                        userData
                 }
             );
 
@@ -166,41 +159,30 @@ export default async function handler(req, res) {
         if (!channelId) {
 
             return sendJson(res, 400, {
-                error:
-                    "채널 ID를 확인할 수 없습니다."
+                success: false,
+                error: "채널 ID가 없습니다."
             });
 
         }
 
 
         // ========================================
-        // 3. 비공식 CHZZK 팔로워 API
+        // 3. 비공식 팔로워 API
         // ========================================
 
         const followerUrl =
-            new URL(
-                `https://api.chzzk.naver.com/manage/v1/channels/${channelId}/followers`
-            );
+            `https://api.chzzk.naver.com/manage/v1/channels/${channelId}/followers?page=0&size=10000`;
 
 
-        followerUrl.searchParams.set(
-            "page",
-            "0"
+        console.log(
+            "FOLLOWERS REQUEST:",
+            followerUrl
         );
-
-
-        followerUrl.searchParams.set(
-            "size",
-            "10000"
-        );
-
-
-        // userNickname은 넣지 않는다.
 
 
         const followerResponse =
             await fetch(
-                followerUrl.toString(),
+                followerUrl,
                 {
                     method: "GET",
 
@@ -208,11 +190,11 @@ export default async function handler(req, res) {
                         "Accept":
                             "application/json",
 
-                        "Content-Type":
-                            "application/json",
-
                         "Authorization":
-                            `Bearer ${accessToken}`
+                            `Bearer ${accessToken}`,
+
+                        "Content-Type":
+                            "application/json"
                     }
                 }
             );
@@ -223,7 +205,6 @@ export default async function handler(req, res) {
 
 
         let followerData;
-
 
         try {
 
@@ -241,13 +222,22 @@ export default async function handler(req, res) {
         }
 
 
+        console.log(
+            "FOLLOWERS STATUS:",
+            followerResponse.status
+        );
+
+        console.log(
+            "FOLLOWERS RESPONSE:",
+            followerData
+        );
+
+
+        // ========================================
+        // 4. API 자체 오류
+        // ========================================
+
         if (!followerResponse.ok) {
-
-            console.error(
-                "Followers API error:",
-                followerData
-            );
-
 
             return sendJson(
                 res,
@@ -255,12 +245,15 @@ export default async function handler(req, res) {
                 {
                     success: false,
 
+                    status:
+                        followerResponse.status,
+
                     channelId,
 
                     error:
                         followerData?.message ||
                         followerData?.error ||
-                        "팔로워 정보를 가져오지 못했습니다.",
+                        `팔로워 API 오류 (${followerResponse.status})`,
 
                     response:
                         followerData
@@ -271,20 +264,45 @@ export default async function handler(req, res) {
 
 
         // ========================================
-        // 4. 응답 데이터 정리
+        // 5. 응답에서 팔로워 배열 찾기
         // ========================================
 
-        const followers =
+        let followers = [];
+
+
+        if (
             Array.isArray(
                 followerData?.content?.data
             )
-                ? followerData.content.data
-                : Array.isArray(
-                    followerData?.content
-                )
-                    ? followerData.content
-                    : [];
+        ) {
 
+            followers =
+                followerData.content.data;
+
+        } else if (
+            Array.isArray(
+                followerData?.content
+            )
+        ) {
+
+            followers =
+                followerData.content;
+
+        } else if (
+            Array.isArray(
+                followerData?.data
+            )
+        ) {
+
+            followers =
+                followerData.data;
+
+        }
+
+
+        // ========================================
+        // 6. 최종 반환
+        // ========================================
 
         return sendJson(res, 200, {
 
@@ -303,7 +321,7 @@ export default async function handler(req, res) {
     } catch (error) {
 
         console.error(
-            "Followers API error:",
+            "FOLLOWERS SERVER ERROR:",
             error
         );
 
@@ -314,7 +332,12 @@ export default async function handler(req, res) {
 
             error:
                 error.message ||
-                "팔로워 정보를 가져오는 중 서버 오류가 발생했습니다."
+                "팔로워 정보를 가져오는 중 서버 오류가 발생했습니다.",
+
+            stack:
+                process.env.NODE_ENV === "development"
+                    ? error.stack
+                    : undefined
 
         });
 
