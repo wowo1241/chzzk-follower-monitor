@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CHZZK Follower Monitor</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+    <main class="container">
+
+        <section class="card">
+
+            <h1>CHZZK Follower Monitor</h1>
+
+            <p class="description">
+                치지직 팔로워 모니터 테스트
+            </p>
+
+            <!-- 로그인 전 -->
+            <div id="login-section">
+
+                <button id="login-button" class="chzzk-button">
+                    CHZZK 로그인
+                </button>
+
+            </div>
+
+
+            <!-- 로그인 후 -->
+            <div id="user-section" class="hidden">
+
+                <div class="profile">
+
+                    <img
+                        id="profile-image"
+                        src=""
+                        alt="프로필 이미지"
+                    >
+
+                    <div class="profile-info">
+
+                        <div
+                            id="channel-name"
+                            class="channel-name"
+                        >
+                            -
+                        </div>
+
+                        <div
+                            id="channel-id"
+                            class="channel-id"
+                        >
+                            -
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="follower-box">
+
+                    <div class="follower-label">
+                        팔로워
+                    </div>
+
+                    <div
+                        id="follower-count"
+                        class="follower-count"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="logout-button"
+                    class="logout-button"
+                >
+                    로그아웃
+                </button>
+
+            </div>
+
+
+            <!-- 상태 메시지 -->
+            <div
+                id="status"
+                class="status"
+            >
+                로그인 상태를 확인하는 중...
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="/script.js"></script>
+
+</body>
+</html>
