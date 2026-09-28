@@ -38,9 +38,7 @@ export default async function handler(req, res) {
         const session = getCookie(req, "chzzk_session");
 
         if (!session) {
-            return sendJson(res, 401, {
-                error: "로그인이 필요합니다."
-            });
+            return sendJson(res, 401, { error: "로그인이 필요합니다." });
         }
 
         let sessionData;
@@ -50,45 +48,85 @@ export default async function handler(req, res) {
                 Buffer.from(session, "base64").toString("utf8")
             );
         } catch {
-            return sendJson(res, 401, {
-                error: "로그인 세션이 올바르지 않습니다."
-            });
+            return sendJson(res, 401, { error: "로그인 세션이 올바르지 않습니다." });
         }
 
-        const accessToken = sessionData.accessToken;
+        let accessToken = sessionData.accessToken;
+        let refreshToken = sessionData.refreshToken;
 
         if (!accessToken) {
-            return sendJson(res, 401, {
-                error: "Access Token이 없습니다."
+            return sendJson(res, 401, { error: "Access Token이 없습니다." });
+        }
+
+        // ============================================
+        // 유저 정보를 가져오는 헬퍼 함수
+        // ============================================
+        async function fetchUser(token) {
+            return fetch("https://openapi.chzzk.naver.com/open/v1/users/me", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
             });
         }
 
         // ============================================
-        // 2. 로그인한 사용자의 채널 ID 확인
+        // 2. 로그인한 사용자의 채널 ID 확인 요청
         // ============================================
-        const userResponse = await fetch(
-            "https://openapi.chzzk.naver.com/open/v1/users/me",
-            {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                }
+        let userResponse = await fetchUser(accessToken);
+        let userData = await userResponse.json();
+
+        // ============================================
+        // 💡 3. Access Token 만료 (10분 경과) 자동 갱신 로직
+        // ============================================
+        if (userResponse.status === 401 || userData.code === 401 || userData.message === "INVALID_TOKEN") {
+            console.log("토큰 만료 감지. Refresh Token으로 새 토큰을 발급받습니다...");
+
+            const refreshRes = await fetch("https://openapi.chzzk.naver.com/auth/v1/token", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    grantType: "refresh_token",
+                    clientId: process.env.CHZZK_CLIENT_ID,
+                    clientSecret: process.env.CHZZK_CLIENT_SECRET,
+                    refreshToken: refreshToken
+                })
+            });
+
+            const refreshData = await refreshRes.json();
+
+            if (refreshRes.ok && refreshData.content && refreshData.content.accessToken) {
+                console.log("새 토큰 갱신 성공!");
+                
+                // 새 토큰으로 업데이트
+                accessToken = refreshData.content.accessToken;
+                refreshToken = refreshData.content.refreshToken || refreshToken;
+
+                // 브라우저 쿠키에 갱신된 세션 조용히 덮어쓰기
+                const newSession = Buffer.from(JSON.stringify({ accessToken, refreshToken })).toString("base64");
+                res.setHeader(
+                    "Set-Cookie",
+                    `chzzk_session=${newSession}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
+                );
+
+                // 새 토큰으로 유저 정보 재요청
+                userResponse = await fetchUser(accessToken);
+                userData = await userResponse.json();
+            } else {
+                // Refresh Token마저 만료된 경우 (강제 로그아웃 필요)
+                console.error("Refresh Token 갱신 실패:", refreshData);
+                return sendJson(res, 401, { error: "INVALID_TOKEN" });
             }
-        );
+        }
 
-        const userData = await userResponse.json();
-
+        // ============================================
+        // 4. 권한 및 채널 ID 검증
+        // ============================================
         if (!userResponse.ok || !userData.content) {
-            console.error(
-                "CHZZK 사용자 정보 오류:",
-                userData
-            );
-
+            console.error("CHZZK 사용자 정보 오류:", userData);
             return sendJson(res, userResponse.status || 500, {
-                error:
-                    userData.message ||
-                    "CHZZK 사용자 정보를 가져오지 못했습니다."
+                error: userData.message || "CHZZK 사용자 정보를 가져오지 못했습니다."
             });
         }
 
@@ -101,82 +139,50 @@ export default async function handler(req, res) {
         }
 
         // ============================================
-        // 3. 공식 CHZZK 팔로워 API
+        // 5. 공식 CHZZK 팔로워 목록 요청
         // ============================================
-        const followerUrl = new URL(
-            "https://openapi.chzzk.naver.com/open/v1/channels/followers"
-        );
-
+        const followerUrl = new URL("https://openapi.chzzk.naver.com/open/v1/channels/followers");
         followerUrl.searchParams.set("page", "0");
         followerUrl.searchParams.set("size", "50");
 
-        const followerResponse = await fetch(
-            followerUrl.toString(),
-            {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                }
+        const followerResponse = await fetch(followerUrl.toString(), {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`, // 💡 여기서도 갱신된(또는 기존) 토큰 사용
+                "Content-Type": "application/json"
             }
-        );
+        });
 
         const followerData = await followerResponse.json();
 
-        console.log(
-            "Followers API status:",
-            followerResponse.status
-        );
-
-        console.log(
-            "Followers API response:",
-            followerData
-        );
-
-        // ============================================
-        // 4. 권한 오류
-        // ============================================
         if (!followerResponse.ok) {
             return sendJson(res, followerResponse.status, {
                 success: false,
                 channelId,
-                error:
-                    followerData.message ||
-                    "팔로워 정보를 가져오지 못했습니다.",
+                error: followerData.message || "팔로워 정보를 가져오지 못했습니다.",
                 response: followerData
             });
         }
 
         // ============================================
-        // 5. 팔로워 데이터 반환
+        // 6. 팔로워 목록 & 카운트 반환
         // ============================================
-        const followers =
-            followerData.content?.data ||
-            followerData.content ||
-            [];
-            
-        // 💡 추가: JSON에 있는 totalCount를 가져옵니다. (없으면 배열 길이로 대체)
-        const totalCount = 
-            followerData.content?.totalCount || followers.length;
+        const followers = followerData.content?.data || followerData.content || [];
+        const totalCount = followerData.content?.totalCount || followers.length;
 
         return sendJson(res, 200, {
             success: true,
             channelId,
-            totalCount, // 💡 프론트엔드로 카운트 전달
+            totalCount, 
             followers
         });
 
     } catch (error) {
-        console.error(
-            "Followers API error:",
-            error
-        );
+        console.error("Followers API error:", error);
 
         return sendJson(res, 500, {
             success: false,
-            error:
-                error.message ||
-                "팔로워 정보를 가져오는 중 서버 오류가 발생했습니다."
+            error: error.message || "팔로워 정보를 가져오는 중 서버 오류가 발생했습니다."
         });
     }
 }
