@@ -108,7 +108,7 @@ export default async function handler(req, res) {
         );
 
         followerUrl.searchParams.set("page", "0");
-        followerUrl.searchParams.set("size", "50");
+        followerUrl.searchParams.set("size", "10000");
 
         const followerResponse = await fetch(
             followerUrl.toString(),
