@@ -1022,20 +1022,18 @@ async function pollFollowers() {
     pollingInProgress = true;
 
     try {
-        // 💡 핵심: Promise.all 없이 followers 하나만 호출
         const { followers, totalCount } = await fetchFollowers();
-
-        // 1. 숫자 업데이트
         updateFollowerCount(totalCount);
 
-        // 2. 목록 비교 및 갱신
         const currentFollowers = makeFollowerMap(followers);
         compareFollowers(currentFollowers);
+
+        // 💡 추가: 5초마다 기존 항목들의 시간 텍스트를 최신화 ("방금 전" -> "1분 전" 등)
+        updateActivityTimes();
 
         statusDot.classList.remove("error");
         monitorStatusText.textContent = "실시간 팔로워 감시 중";
 
-        // 💡 시간 업데이트 (refreshFollowerCount 함수를 없앴으므로 이곳에서 갱신)
         const now = new Date();
         const timeText = formatTime(now);
         lastUpdated.textContent = `${timeText} 업데이트`;
@@ -1182,5 +1180,18 @@ async function initialize() {
 
 }
 
+/* ========================================= */
+/* 활동 시간 텍스트 실시간 갱신 */
+/* ========================================= */
+function updateActivityTimes() {
+    for (const activity of activityItems) {
+        if (activity.domNode) {
+            const timeElement = activity.domNode.querySelector('.activity-time');
+            if (timeElement) {
+                timeElement.textContent = formatActivityTime(activity.time);
+            }
+        }
+    }
+}
 
 initialize();
