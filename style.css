@@ -300,10 +300,12 @@ button {
 }
 
 .empty-activity {
-    padding: 60px 20px;
+    height: 79px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #aaa;
     font-size: 14px;
-    text-align: center;
 }
 
 .activity-item {
