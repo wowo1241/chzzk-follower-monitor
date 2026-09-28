@@ -1,3 +1,4 @@
+const loadingSection = document.getElementById("loading-section");
 const loginSection = document.getElementById("login-section");
 const userSection = document.getElementById("user-section");
 
@@ -188,93 +189,48 @@ logoutButton.addEventListener("click", async () => {
 /* ========================================= */
 
 async function loadUser() {
-
     try {
-
-        const response = await fetch(
-            "/api/me",
-            {
-                method: "GET",
-                cache: "no-store"
-            }
-        );
-
+        const response = await fetch("/api/me", { method: "GET", cache: "no-store" });
         const data = await response.json();
 
         if (!response.ok) {
-
             if (response.status === 401) {
-
+                // 💡 수정: 로그인 안 됨 -> 로딩 끄고 로그인 창 켜기
+                loadingSection.classList.add("hidden"); 
                 loginSection.classList.remove("hidden");
-
                 userSection.classList.add("hidden");
-
                 return false;
-
             }
-
-            throw new Error(
-                data.error ||
-                "사용자 정보를 가져오지 못했습니다."
-            );
-
+            throw new Error(data.error || "사용자 정보를 가져오지 못했습니다.");
         }
 
-
+        // 💡 수정: 로그인 됨 -> 로딩 끄고 대시보드 켜기
+        loadingSection.classList.add("hidden");
         loginSection.classList.add("hidden");
-
         userSection.classList.remove("hidden");
 
-
-        currentChannelId =
-            data.channelId || null;
-
-
-        channelName.textContent =
-            data.channelName || "-";
-
-
-        channelId.textContent =
-            data.channelId || "-";
-
+        currentChannelId = data.channelId || null;
+        channelName.textContent = data.channelName || "-";
+        channelId.textContent = data.channelId || "-";
 
         if (data.channelImageUrl) {
-
-            setProfileImage(
-                profileImage,
-                data.channelImageUrl
-            );
-
+            setProfileImage(profileImage, data.channelImageUrl);
         } else {
-
             profileImage.removeAttribute("src");
-
         }
 
-
-        /*
-         * 💡 수정: 처음부터 0을 박아두고, 
-         * 애니메이션 갱신 함수를 호출해 0부터 목표숫자까지 촤라락 올라가게 만듭니다.
-         */
-        displayedFollowerCount = 0; 
-
-        // 그냥 텍스트를 바꾸지 말고, 애니메이션 함수를 태워 보냅니다.
+        // 💡 수정: 0에서부터 실제 팔로워 수까지 촤라라락 올라가도록 실행
+        displayedFollowerCount = 0;
         updateFollowerCount(data.followerCount || 0);
 
         return true;
-
     } catch (error) {
-
         console.error(error);
-
+        loadingSection.classList.add("hidden");
         loginSection.classList.remove("hidden");
-
         userSection.classList.add("hidden");
-
         return false;
-
     }
-
 }
 
 
@@ -427,11 +383,11 @@ function animateFollowerCount(targetCount) {
 /* ========================================= */
 
 function updateFollowerCount(count) {
-    /* 콤마(,)가 포함된 문자열이 넘어와도 에러가 나지 않도록 콤마 제거 */
     const cleanNumber = String(count || 0).replace(/,/g, '');
-    const number = Number(cleanNumber) || 0;
+    const targetNumber = Number(cleanNumber) || 0;
 
-    animateFollowerCount(number);
+    // 💡 값을 넣기만 하면 Odometer 라이브러리가 알아서 촤라라락 굴려줌
+    followerCount.innerHTML = targetNumber;
 }
 
 
