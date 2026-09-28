@@ -213,11 +213,7 @@ async function loadUser() {
         channelName.textContent = data.channelName || "-";
         channelId.textContent = data.channelId || "-";
 
-        if (data.channelImageUrl) {
-            setProfileImage(profileImage, data.channelImageUrl);
-        } else {
-            profileImage.removeAttribute("src");
-        }
+        setProfileImage(profileImage, data.channelImageUrl);
 
         // 💡 수정: 0에서부터 실제 팔로워 수까지 촤라라락 올라가도록 실행
         displayedFollowerCount = 0;
@@ -426,14 +422,7 @@ async function refreshFollowerCount() {
      * 채널 정보가 변경될 경우
      * 프로필 이미지도 갱신
      */
-    if (data.channelImageUrl) {
-
-        setProfileImage(
-            profileImage,
-            data.channelImageUrl
-        );
-
-    }
+    setProfileImage(profileImage, data.channelImageUrl);
 
 
     const now =
@@ -488,47 +477,28 @@ async function fetchFollowers() {
 
 
 /* ========================================= */
-/* 팔로워 목록을 Map으로 변환 */
+/* 팔로워 목록을 Map으로 변환 (공식 API JSON 구조 반영) */
 /* ========================================= */
-
 function makeFollowerMap(followers) {
-
     const map = new Map();
 
-
     for (const follower of followers) {
+        if (!follower) continue;
 
-        if (!follower) {
-            continue;
-        }
+        // 💡 중요: 공식 API 응답 구조(user.userIdHash)에 맞게 데이터 추출
+        const id = follower.user?.userIdHash || follower.channelId;
+        const name = follower.user?.nickname || follower.channelName || "알 수 없는 사용자";
 
+        if (!id) continue;
 
-        if (!follower.channelId) {
-            continue;
-        }
-
-
-        map.set(
-            follower.channelId,
-            {
-                channelId:
-                    follower.channelId,
-
-                channelName:
-                    follower.channelName ||
-                    "알 수 없는 사용자",
-
-                createdDate:
-                    follower.createdDate ||
-                    null
-            }
-        );
-
+        map.set(id, {
+            channelId: id,
+            channelName: name,
+            createdDate: follower.following?.followDate || follower.createdDate || null
+        });
     }
 
-
     return map;
-
 }
 
 
@@ -876,22 +846,26 @@ async function getProfileInfo(channelId) {
 
 
 /* ========================================= */
-/* 프로필 이미지 설정 (수정됨) */
+/* 프로필 이미지 설정 (null 및 에러 완벽 대응) */
 /* ========================================= */
 function setProfileImage(imageElement, imageUrl) {
-    if (!imageElement || !imageUrl) {
-        return;
-    }
+    if (!imageElement) return;
 
-    // 💡 핵심: 외부 이미지(CDN) 로드 시 403 Forbidden / 차단 방지
+    // 💡 치지직 기본 회색 프로필 이미지
+    const defaultImage = "https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacity2x.png";
+    
+    // imageUrl이 null이거나 비어있으면 기본 이미지 사용
+    const finalImageUrl = imageUrl || defaultImage;
+
     imageElement.setAttribute("referrerpolicy", "no-referrer");
 
+    // 혹시라도 이미지가 깨질 경우(404 등) 엑스박스 대신 기본 이미지로 대체
     imageElement.onerror = () => {
         imageElement.onerror = null;
-        imageElement.removeAttribute("src");
+        imageElement.src = defaultImage;
     };
 
-    imageElement.src = imageUrl;
+    imageElement.src = finalImageUrl;
 }
 
 
@@ -1004,14 +978,7 @@ function createActivityElement(activity) {
     /*
      * 이미지가 있으면 표시
      */
-    if (activity.channelImageUrl) {
-
-        setProfileImage(
-            image,
-            activity.channelImageUrl
-        );
-
-    }
+    setProfileImage(image, activity.channelImageUrl);
 
 
     /*
