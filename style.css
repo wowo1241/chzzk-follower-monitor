@@ -291,14 +291,13 @@ button {
 .follower-count {
     margin-top: 12px;
 
+    width: 100%;
     min-height: 1.15em;
 
     display: flex;
 
     align-items: center;
     justify-content: center;
-
-    width: 100%;
 
     color: #171717;
 
@@ -321,222 +320,6 @@ button {
     user-select: none;
 
     overflow: visible;
-}
-
-
-/*
- * script.js가 생성하는 롤링 카운터
- *
- * 실제 숫자가 들어있는 영역만
- * 세로로 굴러가도록 설정한다.
- */
-
-#follower-count.rolling-counter {
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    width: 100%;
-
-    min-height: 1.15em;
-
-    white-space: nowrap;
-
-    overflow: visible;
-
-    line-height: 1;
-
-    font-variant-numeric:
-        tabular-nums;
-}
-
-
-/* ========================================= */
-/* 개별 숫자 슬롯 */
-/* ========================================= */
-
-#follower-count .rolling-digit {
-    position: relative;
-
-    display: inline-block;
-
-    width: 0.68em;
-    height: 1.15em;
-
-    flex: 0 0 0.68em;
-
-    overflow: hidden;
-
-    vertical-align: middle;
-
-    line-height: 1;
-
-    /*
-     * 숫자가 슬롯 밖으로 튀어나오지 않도록
-     * 위/아래를 정확히 잘라낸다.
-     */
-
-    border-radius: 4px;
-
-    clip-path: inset(0 0 0 0);
-}
-
-
-/* ========================================= */
-/* 숫자 세로 트랙 */
-/* ========================================= */
-
-#follower-count .rolling-track {
-    position: absolute;
-
-    top: 0;
-    left: 0;
-
-    width: 100%;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: flex-start;
-
-    margin: 0;
-    padding: 0;
-
-    transform: translateY(0);
-
-    will-change: transform;
-
-    /*
-     * JS에서 transform을 변경할 때
-     * 자연스럽게 굴러가도록 한다.
-     */
-
-    backface-visibility: hidden;
-
-    -webkit-backface-visibility: hidden;
-
-    transform-style: preserve-3d;
-
-    -webkit-transform-style: preserve-3d;
-}
-
-
-/* ========================================= */
-/* 개별 숫자 */
-/* ========================================= */
-
-#follower-count .rolling-number {
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    width: 100%;
-    height: 1.15em;
-
-    flex: 0 0 1.15em;
-
-    margin: 0;
-    padding: 0;
-
-    color: #171717;
-
-    line-height: 1;
-
-    font-size: 1em;
-
-    font-weight: 900;
-
-    font-variant-numeric:
-        tabular-nums;
-
-    backface-visibility: hidden;
-
-    -webkit-backface-visibility: hidden;
-}
-
-
-/* ========================================= */
-/* 콤마 */
-/* ========================================= */
-
-#follower-count .rolling-comma {
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    width: 0.25em;
-    height: 1.15em;
-
-    flex: 0 0 0.25em;
-
-    margin: 0;
-
-    padding: 0;
-
-    color: #171717;
-
-    line-height: 1;
-
-    font-size: 1em;
-
-    font-weight: 900;
-
-    vertical-align: middle;
-
-    user-select: none;
-}
-
-
-/* ========================================= */
-/* 숫자 롤링 애니메이션 */
-/* ========================================= */
-
-#follower-count
-.rolling-track.rolling-moving {
-
-    transition:
-        transform
-        0.55s
-        cubic-bezier(
-            0.22,
-            0.61,
-            0.36,
-            1
-        );
-
-}
-
-
-/* ========================================= */
-/* 숫자 변화 중 시각 효과 */
-/* ========================================= */
-
-#follower-count.rolling-counter
-.rolling-digit {
-
-    isolation: isolate;
-}
-
-
-/*
- * 숫자가 굴러갈 때 위/아래 숫자가
- * 살짝 흐려 보이는 느낌을 줄여
- * 롤링 카운터처럼 보이게 한다.
- */
-
-#follower-count
-.rolling-track.rolling-moving
-.rolling-number {
-
-    -webkit-font-smoothing: antialiased;
-
-    text-rendering: optimizeLegibility;
 }
 
 
@@ -841,17 +624,8 @@ button {
     prefers-reduced-motion: reduce
 ) {
 
-    #follower-count
-    .rolling-track {
-
-        transition: none !important;
-
-    }
-
     .activity-item {
-
         animation: none !important;
-
     }
 
 }
@@ -894,18 +668,6 @@ button {
         letter-spacing: -1px;
     }
 
-    #follower-count.rolling-counter {
-        min-height: 1.15em;
-    }
-
-    #follower-count .rolling-digit {
-        width: 0.68em;
-
-        flex-basis: 0.68em;
-
-        height: 1.15em;
-    }
-
     .activity-name {
         max-width: 180px;
     }
@@ -921,18 +683,6 @@ button {
 
     .follower-count {
         font-size: 48px;
-    }
-
-    #follower-count .rolling-digit {
-        width: 0.66em;
-
-        flex-basis: 0.66em;
-    }
-
-    #follower-count .rolling-comma {
-        width: 0.22em;
-
-        flex-basis: 0.22em;
     }
 
 }
