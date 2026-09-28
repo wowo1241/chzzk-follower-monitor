@@ -388,91 +388,21 @@ function updateFollowerCount(count) {
 
 
 /* ========================================= */
-/* 공식 API에서 현재 팔로워 수 갱신 */
+/* API에서 팔로워 전체 목록 & 카운트 가져오기 */
 /* ========================================= */
-
-async function refreshFollowerCount() {
-
-    const response = await fetch(
-        "/api/me",
-        {
-            method: "GET",
-            cache: "no-store"
-        }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-
-        throw new Error(
-            data.error ||
-            "팔로워 수를 가져오지 못했습니다."
-        );
-
-    }
-
-
-    updateFollowerCount(
-        data.followerCount
-    );
-
-
-    /*
-     * 채널 정보가 변경될 경우
-     * 프로필 이미지도 갱신
-     */
-    setProfileImage(profileImage, data.channelImageUrl);
-
-
-    const now =
-        new Date();
-
-
-    const timeText =
-        formatTime(now);
-
-
-    lastUpdated.textContent =
-        `${timeText} 업데이트`;
-
-
-    footerTime.textContent =
-        timeText;
-
-}
-
-
-/* ========================================= */
-/* 비공식 API에서 팔로워 전체 목록 가져오기 */
-/* ========================================= */
-
 async function fetchFollowers() {
-
-    const response = await fetch(
-        "/api/followers",
-        {
-            method: "GET",
-            cache: "no-store"
-        }
-    );
-
+    const response = await fetch("/api/followers", { method: "GET", cache: "no-store" });
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-
-        throw new Error(
-            data.error ||
-            `팔로워 목록을 가져오지 못했습니다. (HTTP ${response.status})`
-        );
-
+        throw new Error(data.error || `팔로워 정보를 가져오지 못했습니다. (HTTP ${response.status})`);
     }
 
-
-    return Array.isArray(data.followers)
-        ? data.followers
-        : [];
-
+    // 💡 목록과 총 팔로워 수를 객체로 묶어서 반환
+    return {
+        followers: Array.isArray(data.followers) ? data.followers : [],
+        totalCount: data.totalCount || 0
+    };
 }
 
 
@@ -1050,235 +980,77 @@ async function loadActivityProfile(activity) {
 /* ========================================= */
 /* 모니터링 시작 */
 /* ========================================= */
-
 async function startMonitoring() {
-
-    if (monitoring) {
-        return;
-    }
-
-
+    if (monitoring) return;
     monitoring = true;
-
     pollingInProgress = false;
-
     hasInitialSnapshot = false;
 
-
     statusDot.classList.remove("error");
-
     statusDot.classList.add("loading");
-
-
-    monitorStatusText.textContent =
-        "팔로워 목록을 불러오는 중...";
-
+    monitorStatusText.textContent = "팔로워 목록을 불러오는 중...";
 
     try {
+        // 💡 핵심: me.js 없이 이거 하나로 데이터 2개를 동시에 가져옴
+        const { followers, totalCount } = await fetchFollowers();
 
-        /*
-         * 최초 목록과 팔로워 수를
-         * 동시에 가져온다.
-         *
-         * 기존에는
-         *
-         * followers
-         * ↓
-         * /api/me
-         *
-         * 순서였기 때문에 불필요하게 기다렸다.
-         */
+        // 가져온 카운트로 즉시 숫자 업데이트
+        updateFollowerCount(totalCount);
 
-        const [
-            followers
-        ] = await Promise.all([
-            fetchFollowers(),
-            refreshFollowerCount()
-        ]);
-
-
-        /*
-         * 최초 기준 목록
-         */
-
-        previousFollowers =
-            makeFollowerMap(
-                followers
-            );
-
-
+        previousFollowers = makeFollowerMap(followers);
         hasInitialSnapshot = true;
 
+        statusDot.classList.remove("loading");
+        statusDot.classList.remove("error");
+        monitorStatusText.textContent = "실시간 팔로워 감시 중";
 
-        statusDot.classList.remove(
-            "loading"
-        );
-
-
-        statusDot.classList.remove(
-            "error"
-        );
-
-
-        monitorStatusText.textContent =
-            "실시간 팔로워 감시 중";
-
-
-        /*
-         * 기존 polling이 있다면 제거
-         */
-
-        if (pollingTimer) {
-
-            clearInterval(
-                pollingTimer
-            );
-
-        }
-
-
-        /*
-         * 5초마다 확인
-         */
-
-        pollingTimer =
-            setInterval(
-                pollFollowers,
-                POLLING_INTERVAL
-            );
-
+        if (pollingTimer) clearInterval(pollingTimer);
+        pollingTimer = setInterval(pollFollowers, POLLING_INTERVAL);
 
     } catch (error) {
-
-        console.error(
-            "Monitoring start error:",
-            error
-        );
-
-
-        statusDot.classList.remove(
-            "loading"
-        );
-
-
-        statusDot.classList.add(
-            "error"
-        );
-
-
-        monitorStatusText.textContent =
-            error.message ||
-            "팔로워 정보를 가져오지 못했습니다.";
-
-
+        console.error("Monitoring start error:", error);
+        statusDot.classList.remove("loading");
+        statusDot.classList.add("error");
+        monitorStatusText.textContent = error.message || "팔로워 정보를 가져오지 못했습니다.";
         monitoring = false;
-
     }
-
 }
 
 
 /* ========================================= */
 /* 5초 polling */
 /* ========================================= */
-
 async function pollFollowers() {
-
-    /*
-     * 이전 polling이 아직 끝나지 않았다면
-     * 이번 요청은 건너뛴다.
-     *
-     * API가 느릴 경우 요청이 계속 겹치는
-     * 문제를 방지한다.
-     */
-
-    if (pollingInProgress) {
-
-        console.log(
-            "이전 polling이 아직 진행 중입니다."
-        );
-
-        return;
-
-    }
-
-
+    if (pollingInProgress) return;
     pollingInProgress = true;
 
-
     try {
+        // 💡 핵심: Promise.all 없이 followers 하나만 호출
+        const { followers, totalCount } = await fetchFollowers();
 
-        /*
-         * 중요:
-         *
-         * 두 API를 동시에 호출한다.
-         *
-         * /api/me
-         * /api/followers
-         *
-         * 둘 중 하나가 끝날 때까지
-         * 다른 하나를 기다리지 않는다.
-         */
+        // 1. 숫자 업데이트
+        updateFollowerCount(totalCount);
 
-        const [
-            _,
-            followers
-        ] = await Promise.all([
-            refreshFollowerCount(),
-            fetchFollowers()
-        ]);
+        // 2. 목록 비교 및 갱신
+        const currentFollowers = makeFollowerMap(followers);
+        compareFollowers(currentFollowers);
 
+        statusDot.classList.remove("error");
+        monitorStatusText.textContent = "실시간 팔로워 감시 중";
 
-        /*
-         * 현재 팔로워 목록
-         */
-
-        const currentFollowers =
-            makeFollowerMap(
-                followers
-            );
-
-
-        /*
-         * 변화 비교
-         */
-
-        compareFollowers(
-            currentFollowers
-        );
-
-
-        statusDot.classList.remove(
-            "error"
-        );
-
-
-        monitorStatusText.textContent =
-            "실시간 팔로워 감시 중";
-
+        // 💡 시간 업데이트 (refreshFollowerCount 함수를 없앴으므로 이곳에서 갱신)
+        const now = new Date();
+        const timeText = formatTime(now);
+        lastUpdated.textContent = `${timeText} 업데이트`;
+        footerTime.textContent = timeText;
 
     } catch (error) {
-
-        console.error(
-            "Polling error:",
-            error
-        );
-
-
-        statusDot.classList.add(
-            "error"
-        );
-
-
-        monitorStatusText.textContent =
-            "팔로워 정보를 다시 확인하는 중...";
-
+        console.error("Polling error:", error);
+        statusDot.classList.add("error");
+        monitorStatusText.textContent = "팔로워 정보를 다시 확인하는 중...";
     } finally {
-
         pollingInProgress = false;
-
     }
-
 }
 
 
