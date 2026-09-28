@@ -846,20 +846,21 @@ async function getProfileInfo(channelId) {
 
 
 /* ========================================= */
-/* 프로필 이미지 설정 (null 및 에러 완벽 대응) */
+/* 프로필 이미지 설정 (null 및 깜빡임 방지) */
 /* ========================================= */
 function setProfileImage(imageElement, imageUrl) {
     if (!imageElement) return;
 
-    // 💡 치지직 기본 회색 프로필 이미지
     const defaultImage = "https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacity2x.png";
-    
-    // imageUrl이 null이거나 비어있으면 기본 이미지 사용
     const finalImageUrl = imageUrl || defaultImage;
+
+    // 💡 핵심: 이미 같은 프로필 이미지가 박혀있다면 다시 씌우지 않음 (깜빡임 완벽 해결)
+    if (imageElement.src === finalImageUrl) {
+        return;
+    }
 
     imageElement.setAttribute("referrerpolicy", "no-referrer");
 
-    // 혹시라도 이미지가 깨질 경우(404 등) 엑스박스 대신 기본 이미지로 대체
     imageElement.onerror = () => {
         imageElement.onerror = null;
         imageElement.src = defaultImage;
@@ -945,131 +946,104 @@ function renderActivities() {
 
 
 /* ========================================= */
-/* 활동 항목 생성 */
+/* 활동 항목 생성 (domNode 저장 추가) */
 /* ========================================= */
-
 function createActivityElement(activity) {
+    const item = document.createElement("div");
+    item.className = "activity-item";
 
-    const item =
-        document.createElement("div");
-
-
-    item.className =
-        "activity-item";
-
-
-    /*
-     * 프로필 이미지
-     */
-
-    const image =
-        document.createElement("img");
-
-
-    image.className =
-        "activity-image";
-
-
-    image.alt =
-        activity.channelName ||
-        "프로필";
-
-
-    /*
-     * 이미지가 있으면 표시
-     */
+    const image = document.createElement("img");
+    image.className = "activity-image";
+    image.alt = activity.channelName || "프로필";
     setProfileImage(image, activity.channelImageUrl);
 
+    const content = document.createElement("div");
+    content.className = "activity-content";
 
-    /*
-     * 이미지가 없을 경우
-     * 빈 이미지 대신 기본 배경 유지
-     */
+    const main = document.createElement("div");
+    main.className = "activity-main";
 
+    const name = document.createElement("span");
+    name.className = "activity-name";
+    name.textContent = activity.channelName || "알 수 없는 사용자";
 
-    /*
-     * 내용
-     */
-
-    const content =
-        document.createElement("div");
-
-
-    content.className =
-        "activity-content";
-
-
-    const main =
-        document.createElement("div");
-
-
-    main.className =
-        "activity-main";
-
-
-    const name =
-        document.createElement("span");
-
-
-    name.className =
-        "activity-name";
-
-
-    name.textContent =
-        activity.channelName ||
-        "알 수 없는 사용자";
-
-
-    const type =
-        document.createElement("span");
-
-
-    type.className =
-        "activity-type " +
-        (
-            activity.type === "follow"
-                ? "follow"
-                : "unfollow"
-        );
-
-
-    type.textContent =
-        activity.type === "follow"
-            ? "팔로우"
-            : "언팔로우";
-
+    const type = document.createElement("span");
+    type.className = "activity-type " + (activity.type === "follow" ? "follow" : "unfollow");
+    type.textContent = activity.type === "follow" ? "팔로우" : "언팔로우";
 
     main.appendChild(name);
-
     main.appendChild(type);
 
-
-    const time =
-        document.createElement("div");
-
-
-    time.className =
-        "activity-time";
-
-
-    time.textContent =
-        formatActivityTime(
-            activity.time
-        );
-
+    const time = document.createElement("div");
+    time.className = "activity-time";
+    time.textContent = formatActivityTime(activity.time);
 
     content.appendChild(main);
-
     content.appendChild(time);
-
-
     item.appendChild(image);
-
     item.appendChild(content);
 
+    // 💡 핵심: 나중에 이 요소만 부분 업데이트하기 위해 DOM 노드를 저장해둡니다.
+    activity.domNode = item;
 
     return item;
+}
 
+/* ========================================= */
+/* 활동 추가 (전체 렌더링 방지) */
+/* ========================================= */
+function addActivity(activity) {
+    activityItems.unshift(activity);
+
+    if (activityItems.length > 100) {
+        activityItems.pop(); // 오래된 데이터 삭제
+    }
+
+    const item = createActivityElement(activity);
+
+    // '아직 확인된 활동이 없습니다' 메시지 제거
+    if (activityList.contains(emptyActivity)) {
+        activityList.innerHTML = ""; 
+    }
+
+    // 💡 핵심: 전체를 다시 그리지 않고, 새 항목만 리스트 맨 위에 살짝 밀어넣음
+    activityList.prepend(item);
+
+    // 화면에서도 100개가 넘어가면 제일 밑에 있는 항목 하나만 삭제
+    if (activityList.children.length > 100) {
+        activityList.lastElementChild.remove();
+    }
+
+    activityCount.textContent = activityItems.length.toLocaleString("ko-KR");
+}
+
+/* ========================================= */
+/* 활동 프로필 정보 비동기 로딩 (부분 렌더링 적용) */
+/* ========================================= */
+async function loadActivityProfile(activity) {
+    if (!activity.channelId) return;
+
+    try {
+        const profile = await getProfileInfo(activity.channelId);
+
+        if (profile.channelName) {
+            activity.channelName = profile.channelName;
+            // 리스트 전체를 다시 그리지 않고, 저장해둔 DOM에서 이름만 교체
+            if (activity.domNode) {
+                activity.domNode.querySelector('.activity-name').textContent = profile.channelName;
+            }
+        }
+
+        if (profile.channelImageUrl) {
+            activity.channelImageUrl = profile.channelImageUrl;
+            // 리스트 전체를 다시 그리지 않고, 저장해둔 DOM에서 이미지만 교체
+            if (activity.domNode) {
+                setProfileImage(activity.domNode.querySelector('.activity-image'), profile.channelImageUrl);
+            }
+        }
+    } catch (error) {
+        console.error("활동 프로필 갱신 오류:", error);
+    }
 }
 
 
