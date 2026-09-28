@@ -192,7 +192,7 @@ button {
     align-items: center;
     justify-content: center;
     color: #111;
-    font-size: 120px; 
+    font-size: min(120px, 12vw); 
     line-height: 1;
     font-weight: 900;
     letter-spacing: -4px;
@@ -405,7 +405,7 @@ button {
         font-size: 18px;
     }
     .follower-count {
-        font-size: 76px;
+        font-size: min(76px, 16vw);
         letter-spacing: -2px;
     }
     .activity-header {
@@ -421,6 +421,6 @@ button {
 
 @media (max-width: 380px) {
     .follower-count {
-        font-size: 60px;
+        font-size: min(60px, 16vw);
     }
 }
