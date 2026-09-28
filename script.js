@@ -253,17 +253,13 @@ async function loadUser() {
 
 
         /*
-         * 최초 로그인 시에는
-         * 숫자를 바로 표시한다.
+         * 💡 수정: 처음부터 0을 박아두고, 
+         * 애니메이션 갱신 함수를 호출해 0부터 목표숫자까지 촤라락 올라가게 만듭니다.
          */
-        displayedFollowerCount =
-            Number(data.followerCount || 0);
+        displayedFollowerCount = 0; 
 
-        followerCount.textContent =
-            displayedFollowerCount.toLocaleString(
-                "ko-KR"
-            );
-
+        // 그냥 텍스트를 바꾸지 말고, 애니메이션 함수를 태워 보냅니다.
+        updateFollowerCount(data.followerCount || 0);
 
         return true;
 
