@@ -1,31 +1,18 @@
-```css
 * {
     box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
     margin: 0;
     padding: 0;
     min-height: 100%;
 }
 
 body {
-    font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        "Noto Sans KR",
-        sans-serif;
-
-    background: #f5f6f8;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    background: #f4f6f8; /* 눈이 편안한 밝은 배경 */
     color: #222;
 }
-
-
-/* ========================================= */
-/* 공통 */
-/* ========================================= */
 
 .hidden {
     display: none !important;
@@ -35,26 +22,17 @@ button {
     font-family: inherit;
 }
 
-
-/* ========================================= */
-/* 전체 컨테이너 */
-/* ========================================= */
-
 .container {
     width: 100%;
     min-height: 100vh;
-
     padding: 40px 20px;
 }
 
-
 /* ========================================= */
-/* 로그인 */
+/* 로그인 & 로딩 화면 */
 /* ========================================= */
-
 .login-page {
     min-height: calc(100vh - 80px);
-
     display: flex;
     align-items: center;
     justify-content: center;
@@ -62,628 +40,383 @@ button {
 
 .login-card {
     width: 100%;
-    max-width: 420px;
-
-    padding: 45px 35px;
-
+    max-width: 400px;
+    padding: 50px 40px;
     background: #ffffff;
-
-    border-radius: 20px;
-
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.08);
-
+    border-radius: 24px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
     text-align: center;
 }
 
 .logo {
-    width: 70px;
-    height: 70px;
-
+    width: 76px;
+    height: 76px;
     margin: 0 auto 20px;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 20px;
-
+    border-radius: 22px;
     background: #00c73c;
     color: #ffffff;
-
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 900;
+    letter-spacing: 1px;
 }
 
 .login-card h1 {
     margin: 0;
-
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 800;
 }
 
 .login-description {
-    margin: 12px 0 30px;
-
+    margin: 12px 0 35px;
     color: #777;
-
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.5;
 }
-
-
-/* ========================================= */
-/* CHZZK 로그인 버튼 */
-/* ========================================= */
 
 .chzzk-button {
     width: 100%;
-
     border: none;
-    border-radius: 12px;
-
-    padding: 15px;
-
+    border-radius: 14px;
+    padding: 16px;
     background: #00c73c;
     color: #ffffff;
-
     font-size: 16px;
     font-weight: 700;
-
     cursor: pointer;
-
-    transition:
-        opacity 0.2s,
-        transform 0.1s;
+    transition: opacity 0.2s, transform 0.1s;
 }
 
-.chzzk-button:hover {
-    opacity: 0.88;
-}
+.chzzk-button:hover { opacity: 0.9; }
+.chzzk-button:active { transform: scale(0.98); }
 
-.chzzk-button:active {
-    transform: scale(0.99);
+/* 로딩 스피너 */
+.spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 20px;
+    border: 4px solid #f0f0f0;
+    border-top: 4px solid #00c73c;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
-
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* ========================================= */
-/* 대시보드 */
+/* 대시보드 공통 */
 /* ========================================= */
-
 .dashboard {
     width: 100%;
-    max-width: 760px;
-
+    max-width: 800px; /* 대시보드 폭을 살짝 넓힘 */
     margin: 0 auto;
 }
 
-
-/* ========================================= */
-/* 상단 헤더 */
-/* ========================================= */
-
-.top-header {
+.minimal-header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 20px;
-
+    justify-content: flex-end;
     margin-bottom: 20px;
 }
 
-.profile {
-    min-width: 0;
-
-    display: flex;
-    align-items: center;
-
-    gap: 13px;
-}
-
-.profile img {
-    width: 52px;
-    height: 52px;
-
-    flex-shrink: 0;
-
-    border-radius: 50%;
-
-    object-fit: cover;
-
-    background: #e9e9e9;
-}
-
-.profile-info {
-    min-width: 0;
-}
-
-.channel-name {
-    font-size: 18px;
-    font-weight: 800;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.channel-id {
-    margin-top: 4px;
-
-    color: #999;
-
-    font-size: 11px;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-
-/* ========================================= */
-/* 로그아웃 */
-/* ========================================= */
-
 .logout-button {
-    flex-shrink: 0;
-
-    padding: 9px 14px;
-
-    border: 1px solid #ddd;
-    border-radius: 9px;
-
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
     background: #ffffff;
     color: #666;
-
-    font-size: 12px;
-
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-
-    transition:
-        background 0.2s,
-        border-color 0.2s;
+    transition: all 0.2s;
 }
 
 .logout-button:hover {
-    background: #f4f4f4;
-    border-color: #d5d5d5;
+    background: #f8f8f8;
+    border-color: #d0d0d0;
 }
 
-.logout-button:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
-
-
 /* ========================================= */
-/* 팔로워 카드 */
+/* 메인 히어로 카드 (녹스인플루언서 스타일) */
 /* ========================================= */
-
-.follower-card {
-    padding: 42px 25px 38px;
-
+.hero-card {
+    padding: 60px 40px;
     background: #ffffff;
-
-    border-radius: 20px;
-
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.06);
-
+    border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05); /* 크고 부드러운 그림자 */
     text-align: center;
+}
 
-    overflow: hidden;
+.hero-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.hero-profile img {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #f0f0f0;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 4px solid #ffffff;
+    margin-bottom: 20px;
+}
+
+.hero-channel-name {
+    font-size: 26px;
+    font-weight: 900;
+    color: #111;
+}
+
+.hero-channel-id {
+    margin-top: 6px;
+    color: #999;
+    font-size: 14px;
 }
 
 .follower-title {
-    color: #999;
-
-    font-size: 12px;
-    font-weight: 700;
-
-    letter-spacing: 2px;
+    color: #00c73c;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
 }
 
-
-/* ========================================= */
-/* 팔로워 수 */
-/* ========================================= */
-
+/* 💡 거대한 카운터 폰트 */
 .follower-count {
-    margin-top: 12px;
-
     width: 100%;
-    min-height: 1.15em;
-
     display: flex;
-
     align-items: center;
     justify-content: center;
-
-    color: #171717;
-
-    font-size: 68px;
-
-    line-height: 1.15;
-
+    color: #111;
+    font-size: 120px; 
+    line-height: 1;
     font-weight: 900;
-
-    letter-spacing: -1px;
-
-    font-variant-numeric:
-        tabular-nums;
-
-    font-feature-settings:
-        "tnum";
-
+    letter-spacing: -4px;
     white-space: nowrap;
-
-    user-select: none;
-
-    overflow: visible;
 }
-
-
-/* ========================================= */
-/* 마지막 업데이트 */
-/* ========================================= */
 
 .last-updated {
-    margin-top: 16px;
-
+    margin-top: 25px;
     color: #aaa;
-
-    font-size: 12px;
+    font-size: 13px;
 }
-
 
 /* ========================================= */
 /* 모니터링 상태 */
 /* ========================================= */
-
 .monitor-status {
-    margin-top: 14px;
-
-    padding: 12px 15px;
-
-    border-radius: 10px;
-
+    margin: 20px 0;
+    padding: 14px;
+    border-radius: 12px;
     background: #ffffff;
-
-    color: #777;
-
-    font-size: 12px;
-
+    color: #666;
+    font-size: 13px;
+    font-weight: 600;
     text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
 }
 
 .status-dot {
     display: inline-block;
-
-    width: 7px;
-    height: 7px;
-
-    margin-right: 7px;
-
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
     border-radius: 50%;
-
     background: #00c73c;
-
     vertical-align: middle;
 }
-
-.status-dot.error {
-    background: #ff4d4f;
-}
-
-.status-dot.loading {
-    background: #aaa;
-}
-
+.status-dot.error { background: #ff4d4f; }
+.status-dot.loading { background: #aaa; }
 
 /* ========================================= */
-/* 활동 카드 */
+/* 활동 카드 & 내부 스크롤 목록 */
 /* ========================================= */
-
 .activity-card {
-    margin-top: 14px;
-
     background: #ffffff;
-
-    border-radius: 20px;
-
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.06);
-
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
     overflow: hidden;
+    margin-bottom: 20px;
 }
 
 .activity-header {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
-    padding: 22px 22px 18px;
-
+    padding: 24px 28px 20px;
     border-bottom: 1px solid #f0f0f0;
 }
 
 .activity-header h2 {
     margin: 0;
-
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 800;
 }
 
 .activity-header p {
-    margin: 5px 0 0;
-
-    color: #999;
-
-    font-size: 12px;
+    margin: 6px 0 0;
+    color: #888;
+    font-size: 13px;
 }
 
 .activity-count {
-    min-width: 30px;
-    height: 30px;
-
-    padding: 0 8px;
-
+    min-width: 32px;
+    height: 32px;
+    padding: 0 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 15px;
-
-    background: #f1f1f1;
-
-    color: #777;
-
-    font-size: 12px;
+    border-radius: 16px;
+    background: #f4f4f4;
+    color: #555;
+    font-size: 13px;
     font-weight: 700;
 }
 
-
-/* ========================================= */
-/* 활동 목록 */
-/* ========================================= */
-
+/* 💡 핵심: 페이지는 가만히 있고, 박스 안에서만 스크롤되도록 고정 */
 .activity-list {
-    max-height: 500px;
-
-    overflow-y: auto;
-
+    max-height: 450px; /* 박스 최대 높이 고정 */
+    overflow-y: auto;  /* 세로 스크롤 활성화 */
+    overflow-x: hidden;
     overscroll-behavior: contain;
 }
 
-.empty-activity {
-    padding: 50px 20px;
-
-    color: #aaa;
-
-    font-size: 13px;
-
-    text-align: center;
+/* 커스텀 스크롤바 (Webkit 브라우저용) */
+.activity-list::-webkit-scrollbar {
+    width: 6px;
+}
+.activity-list::-webkit-scrollbar-track {
+    background: #f9f9f9; 
+}
+.activity-list::-webkit-scrollbar-thumb {
+    background: #ddd; 
+    border-radius: 10px;
+}
+.activity-list::-webkit-scrollbar-thumb:hover {
+    background: #ccc; 
 }
 
-
-/* ========================================= */
-/* 활동 항목 */
-/* ========================================= */
+.empty-activity {
+    padding: 60px 20px;
+    color: #aaa;
+    font-size: 14px;
+    text-align: center;
+}
 
 .activity-item {
     display: flex;
     align-items: center;
-
-    gap: 13px;
-
-    padding: 14px 20px;
-
-    border-bottom: 1px solid #f5f5f5;
-
-    animation:
-        activity-in
-        0.25s
-        ease;
-}
-
-.activity-item:last-child {
-    border-bottom: none;
+    gap: 15px;
+    padding: 16px 28px;
+    border-bottom: 1px solid #f8f8f8;
+    animation: activity-in 0.3s ease;
 }
 
 @keyframes activity-in {
-
-    from {
-        opacity: 0;
-
-        transform:
-            translateY(-5px);
-    }
-
-    to {
-        opacity: 1;
-
-        transform:
-            translateY(0);
-    }
-
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .activity-image {
-    width: 42px;
-    height: 42px;
-
+    width: 46px;
+    height: 46px;
     flex-shrink: 0;
-
     border-radius: 50%;
-
     object-fit: cover;
-
     background: #eee;
+    border: 1px solid #f0f0f0;
 }
 
 .activity-content {
-    min-width: 0;
-
     flex: 1;
+    min-width: 0;
 }
 
 .activity-main {
     display: flex;
-
     align-items: center;
-
-    gap: 7px;
-
-    min-width: 0;
+    gap: 8px;
 }
 
 .activity-name {
-    max-width: 260px;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
-
-    font-size: 14px;
-
+    font-size: 15px;
     font-weight: 700;
+    color: #222;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .activity-type {
-    flex-shrink: 0;
-
-    padding: 3px 7px;
-
-    border-radius: 5px;
-
-    font-size: 10px;
-
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 700;
 }
 
 .activity-type.follow {
-    background:
-        rgba(
-            0,
-            199,
-            60,
-            0.1
-        );
-
+    background: rgba(0, 199, 60, 0.1);
     color: #00a832;
 }
 
 .activity-type.unfollow {
-    background:
-        rgba(
-            255,
-            77,
-            79,
-            0.1
-        );
-
+    background: rgba(255, 77, 79, 0.1);
     color: #e33a3c;
 }
 
 .activity-time {
-    margin-top: 4px;
-
-    color: #aaa;
-
-    font-size: 11px;
+    margin-top: 5px;
+    color: #999;
+    font-size: 12px;
 }
 
-
 /* ========================================= */
-/* Footer */
+/* 하단 푸터 */
 /* ========================================= */
-
 .footer {
     display: flex;
-
     justify-content: center;
-
-    gap: 5px;
-
-    padding: 20px 0;
-
+    gap: 6px;
+    padding: 10px 0 30px;
     color: #aaa;
-
-    font-size: 11px;
+    font-size: 12px;
 }
 
-
 /* ========================================= */
-/* 접근성 - 애니메이션 감소 */
+/* 모바일 반응형 */
 /* ========================================= */
-
-@media (
-    prefers-reduced-motion: reduce
-) {
-
-    .activity-item {
-        animation: none !important;
-    }
-
-}
-
-
-/* ========================================= */
-/* 모바일 */
-/* ========================================= */
-
 @media (max-width: 600px) {
-
     .container {
-        padding: 20px 12px;
+        padding: 20px 15px;
     }
-
-    .login-page {
-        min-height:
-            calc(100vh - 40px);
+    .hero-card {
+        padding: 40px 20px;
     }
-
-    .login-card {
-        padding: 35px 25px;
+    .hero-profile img {
+        width: 100px;
+        height: 100px;
     }
-
-    .dashboard {
-        max-width: 100%;
+    .hero-channel-name {
+        font-size: 22px;
     }
-
-    .top-header {
-        align-items: flex-start;
-    }
-
-    .follower-card {
-        padding: 35px 20px;
-    }
-
     .follower-count {
-        font-size: 56px;
-
-        letter-spacing: -1px;
+        font-size: 76px; /* 모바일에서도 숫자를 최대한 크게 유지 */
+        letter-spacing: -2px;
     }
-
-    .activity-name {
-        max-width: 180px;
+    .activity-header {
+        padding: 20px;
     }
-
+    .activity-item {
+        padding: 14px 20px;
+    }
 }
-
-
-/* ========================================= */
-/* 작은 모바일 */
-/* ========================================= */
 
 @media (max-width: 380px) {
-
     .follower-count {
-        font-size: 48px;
+        font-size: 60px;
     }
-
 }
-```
