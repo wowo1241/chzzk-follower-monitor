@@ -40,11 +40,44 @@ let monitoring = false;
 
 let currentChannelId = null;
 
+/*
+ * 이전 팔로워 목록
+ */
 let previousFollowers = new Map();
 
+/*
+ * 최초 목록을 이미 저장했는지 여부
+ *
+ * 기존 코드에서는 previousFollowers.size === 0
+ * 을 최초 조회 여부로 사용했기 때문에
+ * 팔로워가 0명인 경우 문제가 생길 수 있었다.
+ */
+let hasInitialSnapshot = false;
+
+/*
+ * 활동 목록
+ */
 let activityItems = [];
 
+/*
+ * 프로필 정보 캐시
+ */
 const profileCache = new Map();
+
+/*
+ * 팔로워 수 화면 표시값
+ */
+let displayedFollowerCount = 0;
+
+/*
+ * 숫자 애니메이션
+ */
+let counterAnimationFrame = null;
+
+/*
+ * polling 중복 실행 방지
+ */
+let pollingInProgress = false;
 
 
 /* ========================================= */
@@ -95,11 +128,43 @@ logoutButton.addEventListener("click", async () => {
 
         userSection.classList.add("hidden");
 
+        /*
+         * 상태 초기화
+         */
+        currentChannelId = null;
+
         previousFollowers.clear();
+
+        hasInitialSnapshot = false;
 
         activityItems = [];
 
+        profileCache.clear();
+
+        displayedFollowerCount = 0;
+
+        if (counterAnimationFrame) {
+
+            cancelAnimationFrame(
+                counterAnimationFrame
+            );
+
+            counterAnimationFrame = null;
+
+        }
+
+        followerCount.textContent = "0";
+
+        channelName.textContent = "-";
+
+        channelId.textContent = "-";
+
+        profileImage.removeAttribute("src");
+
         renderActivities();
+
+        monitorStatusText.textContent =
+            "로그아웃되었습니다.";
 
     } catch (error) {
 
@@ -175,8 +240,10 @@ async function loadUser() {
 
         if (data.channelImageUrl) {
 
-            profileImage.src =
-                data.channelImageUrl;
+            setProfileImage(
+                profileImage,
+                data.channelImageUrl
+            );
 
         } else {
 
@@ -185,9 +252,17 @@ async function loadUser() {
         }
 
 
-        updateFollowerCount(
-            data.followerCount
-        );
+        /*
+         * 최초 로그인 시에는
+         * 숫자를 바로 표시한다.
+         */
+        displayedFollowerCount =
+            Number(data.followerCount || 0);
+
+        followerCount.textContent =
+            displayedFollowerCount.toLocaleString(
+                "ko-KR"
+            );
 
 
         return true;
@@ -208,6 +283,150 @@ async function loadUser() {
 
 
 /* ========================================= */
+/* 팔로워 수 애니메이션 */
+/* ========================================= */
+
+function animateFollowerCount(targetCount) {
+
+    targetCount =
+        Number(targetCount) || 0;
+
+    /*
+     * 이미 같은 숫자라면
+     * 애니메이션을 실행하지 않는다.
+     */
+    if (
+        displayedFollowerCount === targetCount
+    ) {
+
+        followerCount.textContent =
+            targetCount.toLocaleString("ko-KR");
+
+        return;
+
+    }
+
+
+    /*
+     * 기존 애니메이션 취소
+     */
+    if (counterAnimationFrame) {
+
+        cancelAnimationFrame(
+            counterAnimationFrame
+        );
+
+        counterAnimationFrame = null;
+
+    }
+
+
+    const startCount =
+        displayedFollowerCount;
+
+
+    const difference =
+        Math.abs(
+            targetCount - startCount
+        );
+
+
+    /*
+     * 변화량에 따라 애니메이션 속도 조절
+     */
+    const duration =
+        Math.min(
+            900,
+            Math.max(
+                300,
+                difference * 100
+            )
+        );
+
+
+    const startTime =
+        performance.now();
+
+
+    function update(currentTime) {
+
+        const elapsed =
+            currentTime - startTime;
+
+
+        const progress =
+            Math.min(
+                elapsed / duration,
+                1
+            );
+
+
+        /*
+         * ease-out
+         */
+        const eased =
+            1 -
+            Math.pow(
+                1 - progress,
+                3
+            );
+
+
+        const currentValue =
+            Math.round(
+                startCount +
+                (
+                    targetCount -
+                    startCount
+                ) *
+                eased
+            );
+
+
+        displayedFollowerCount =
+            currentValue;
+
+
+        followerCount.textContent =
+            currentValue.toLocaleString(
+                "ko-KR"
+            );
+
+
+        if (progress < 1) {
+
+            counterAnimationFrame =
+                requestAnimationFrame(
+                    update
+                );
+
+        } else {
+
+            displayedFollowerCount =
+                targetCount;
+
+            followerCount.textContent =
+                targetCount.toLocaleString(
+                    "ko-KR"
+                );
+
+            counterAnimationFrame =
+                null;
+
+        }
+
+    }
+
+
+    counterAnimationFrame =
+        requestAnimationFrame(
+            update
+        );
+
+}
+
+
+/* ========================================= */
 /* 팔로워 수 갱신 */
 /* ========================================= */
 
@@ -216,8 +435,7 @@ function updateFollowerCount(count) {
     const number =
         Number(count || 0);
 
-    followerCount.textContent =
-        number.toLocaleString("ko-KR");
+    animateFollowerCount(number);
 
 }
 
@@ -247,24 +465,37 @@ async function refreshFollowerCount() {
 
     }
 
+
     updateFollowerCount(
         data.followerCount
     );
 
+
+    /*
+     * 채널 정보가 변경될 경우
+     * 프로필 이미지도 갱신
+     */
     if (data.channelImageUrl) {
 
-        profileImage.src =
-            data.channelImageUrl;
+        setProfileImage(
+            profileImage,
+            data.channelImageUrl
+        );
 
     }
 
-    const now = new Date();
+
+    const now =
+        new Date();
+
 
     const timeText =
         formatTime(now);
 
+
     lastUpdated.textContent =
         `${timeText} 업데이트`;
+
 
     footerTime.textContent =
         timeText;
@@ -292,10 +523,11 @@ async function fetchFollowers() {
 
         throw new Error(
             data.error ||
-            "팔로워 목록을 가져오지 못했습니다."
+            `팔로워 목록을 가져오지 못했습니다. (HTTP ${response.status})`
         );
 
     }
+
 
     return Array.isArray(data.followers)
         ? data.followers
@@ -312,15 +544,18 @@ function makeFollowerMap(followers) {
 
     const map = new Map();
 
+
     for (const follower of followers) {
 
         if (!follower) {
             continue;
         }
 
+
         if (!follower.channelId) {
             continue;
         }
+
 
         map.set(
             follower.channelId,
@@ -340,6 +575,7 @@ function makeFollowerMap(followers) {
 
     }
 
+
     return map;
 
 }
@@ -352,16 +588,19 @@ function makeFollowerMap(followers) {
 function compareFollowers(currentFollowers) {
 
     /*
-     * 첫 조회:
+     * 최초 조회
      *
-     * 기존 팔로워들은 활동 내역으로
-     * 표시하지 않는다.
+     * 기존 코드처럼 size === 0 을 사용하지 않는다.
+     *
+     * 팔로워가 0명이어도 최초 스냅샷으로
+     * 정확하게 기록된다.
      */
-
-    if (previousFollowers.size === 0) {
+    if (!hasInitialSnapshot) {
 
         previousFollowers =
             currentFollowers;
+
+        hasInitialSnapshot = true;
 
         return;
 
@@ -418,7 +657,7 @@ function compareFollowers(currentFollowers) {
 /* 팔로우 처리 */
 /* ========================================= */
 
-async function handleFollow(follower) {
+function handleFollow(follower) {
 
     console.log(
         "새 팔로워:",
@@ -426,24 +665,30 @@ async function handleFollow(follower) {
     );
 
 
-    const profile =
-        await getProfileInfo(
-            follower.channelId
-        );
+    /*
+     * 중요:
+     *
+     * 기존에는 getProfileInfo()를
+     * await한 다음 활동을 표시했다.
+     *
+     * 그래서 프로필 API가 늦으면
+     * 팔로우 표시 자체가 늦어졌다.
+     *
+     * 이제는 팔로우를 감지하면
+     * 활동을 먼저 즉시 표시한다.
+     */
 
-
-    addActivity({
+    const activity = {
         type: "follow",
 
         channelId:
             follower.channelId,
 
         channelName:
-            profile.channelName ||
-            follower.channelName,
+            follower.channelName ||
+            "알 수 없는 사용자",
 
         channelImageUrl:
-            profile.channelImageUrl ||
             null,
 
         createdDate:
@@ -451,7 +696,16 @@ async function handleFollow(follower) {
 
         time:
             new Date()
-    });
+    };
+
+
+    addActivity(activity);
+
+
+    /*
+     * 프로필 정보는 뒤에서 비동기로 가져온다.
+     */
+    loadActivityProfile(activity);
 
 }
 
@@ -460,7 +714,7 @@ async function handleFollow(follower) {
 /* 언팔로우 처리 */
 /* ========================================= */
 
-async function handleUnfollow(follower) {
+function handleUnfollow(follower) {
 
     console.log(
         "팔로워 취소:",
@@ -468,24 +722,21 @@ async function handleUnfollow(follower) {
     );
 
 
-    const profile =
-        await getProfileInfo(
-            follower.channelId
-        );
+    /*
+     * 언팔로우도 즉시 표시
+     */
 
-
-    addActivity({
+    const activity = {
         type: "unfollow",
 
         channelId:
             follower.channelId,
 
         channelName:
-            profile.channelName ||
-            follower.channelName,
+            follower.channelName ||
+            "알 수 없는 사용자",
 
         channelImageUrl:
-            profile.channelImageUrl ||
             null,
 
         createdDate:
@@ -493,7 +744,73 @@ async function handleUnfollow(follower) {
 
         time:
             new Date()
-    });
+    };
+
+
+    addActivity(activity);
+
+
+    /*
+     * 프로필 정보는 별도로 가져온다.
+     */
+    loadActivityProfile(activity);
+
+}
+
+
+/* ========================================= */
+/* 활동 프로필 정보 비동기 로딩 */
+/* ========================================= */
+
+async function loadActivityProfile(activity) {
+
+    if (!activity.channelId) {
+        return;
+    }
+
+
+    try {
+
+        const profile =
+            await getProfileInfo(
+                activity.channelId
+            );
+
+
+        /*
+         * 프로필 정보를 받은 후
+         * 활동 데이터만 갱신한다.
+         */
+
+        if (profile.channelName) {
+
+            activity.channelName =
+                profile.channelName;
+
+        }
+
+
+        if (profile.channelImageUrl) {
+
+            activity.channelImageUrl =
+                profile.channelImageUrl;
+
+        }
+
+
+        /*
+         * 활동 목록을 다시 그린다.
+         */
+        renderActivities();
+
+    } catch (error) {
+
+        console.error(
+            "활동 프로필 갱신 오류:",
+            error
+        );
+
+    }
 
 }
 
@@ -536,13 +853,15 @@ async function getProfileInfo(channelId) {
             }
         );
 
+
         if (!response.ok) {
 
             throw new Error(
-                "프로필 정보를 가져오지 못했습니다."
+                `프로필 정보를 가져오지 못했습니다. (HTTP ${response.status})`
             );
 
         }
+
 
         const data =
             await response.json();
@@ -576,6 +895,13 @@ async function getProfileInfo(channelId) {
             error
         );
 
+
+        /*
+         * 실패한 경우에도 캐시에 저장해서
+         * 매 polling마다 같은 유저에게
+         * 계속 요청하지 않도록 한다.
+         */
+
         const fallback = {
 
             channelName: null,
@@ -584,14 +910,54 @@ async function getProfileInfo(channelId) {
 
         };
 
+
         profileCache.set(
             channelId,
             fallback
         );
 
+
         return fallback;
 
     }
+
+}
+
+
+/* ========================================= */
+/* 프로필 이미지 설정 */
+/* ========================================= */
+
+function setProfileImage(imageElement, imageUrl) {
+
+    if (
+        !imageElement ||
+        !imageUrl
+    ) {
+        return;
+    }
+
+
+    /*
+     * 기존 onerror 제거
+     */
+    imageElement.onerror = null;
+
+
+    /*
+     * 이미지 로딩 실패 시
+     * 깨진 이미지 아이콘이 계속 보이지 않게 한다.
+     */
+    imageElement.onerror = () => {
+
+        imageElement.onerror = null;
+
+        imageElement.removeAttribute("src");
+
+    };
+
+
+    imageElement.src = imageUrl;
 
 }
 
@@ -608,7 +974,6 @@ function addActivity(activity) {
 
 
     /*
-     * 너무 오래 쌓이지 않도록
      * 최근 100개만 유지
      */
 
@@ -648,7 +1013,9 @@ function renderActivities() {
 
 
     activityCount.textContent =
-        activityItems.length.toLocaleString("ko-KR");
+        activityItems.length.toLocaleString(
+            "ko-KR"
+        );
 
 
     for (
@@ -679,31 +1046,54 @@ function createActivityElement(activity) {
     const item =
         document.createElement("div");
 
+
     item.className =
         "activity-item";
 
 
+    /*
+     * 프로필 이미지
+     */
+
     const image =
         document.createElement("img");
 
+
     image.className =
         "activity-image";
+
 
     image.alt =
         activity.channelName ||
         "프로필";
 
 
+    /*
+     * 이미지가 있으면 표시
+     */
     if (activity.channelImageUrl) {
 
-        image.src =
-            activity.channelImageUrl;
+        setProfileImage(
+            image,
+            activity.channelImageUrl
+        );
 
     }
 
 
+    /*
+     * 이미지가 없을 경우
+     * 빈 이미지 대신 기본 배경 유지
+     */
+
+
+    /*
+     * 내용
+     */
+
     const content =
         document.createElement("div");
+
 
     content.className =
         "activity-content";
@@ -712,6 +1102,7 @@ function createActivityElement(activity) {
     const main =
         document.createElement("div");
 
+
     main.className =
         "activity-main";
 
@@ -719,8 +1110,10 @@ function createActivityElement(activity) {
     const name =
         document.createElement("span");
 
+
     name.className =
         "activity-name";
+
 
     name.textContent =
         activity.channelName ||
@@ -730,6 +1123,7 @@ function createActivityElement(activity) {
     const type =
         document.createElement("span");
 
+
     type.className =
         "activity-type " +
         (
@@ -737,6 +1131,7 @@ function createActivityElement(activity) {
                 ? "follow"
                 : "unfollow"
         );
+
 
     type.textContent =
         activity.type === "follow"
@@ -752,8 +1147,10 @@ function createActivityElement(activity) {
     const time =
         document.createElement("div");
 
+
     time.className =
         "activity-time";
+
 
     time.textContent =
         formatActivityTime(
@@ -786,11 +1183,18 @@ async function startMonitoring() {
         return;
     }
 
+
     monitoring = true;
+
+    pollingInProgress = false;
+
+    hasInitialSnapshot = false;
+
 
     statusDot.classList.remove("error");
 
     statusDot.classList.add("loading");
+
 
     monitorStatusText.textContent =
         "팔로워 목록을 불러오는 중...";
@@ -799,12 +1203,29 @@ async function startMonitoring() {
     try {
 
         /*
-         * 최초 기준 목록
+         * 최초 목록과 팔로워 수를
+         * 동시에 가져온다.
+         *
+         * 기존에는
+         *
+         * followers
+         * ↓
+         * /api/me
+         *
+         * 순서였기 때문에 불필요하게 기다렸다.
          */
 
-        const followers =
-            await fetchFollowers();
+        const [
+            followers
+        ] = await Promise.all([
+            fetchFollowers(),
+            refreshFollowerCount()
+        ]);
 
+
+        /*
+         * 최초 기준 목록
+         */
 
         previousFollowers =
             makeFollowerMap(
@@ -812,19 +1233,34 @@ async function startMonitoring() {
             );
 
 
-        /*
-         * 공식 API 팔로워 수
-         */
-
-        await refreshFollowerCount();
+        hasInitialSnapshot = true;
 
 
         statusDot.classList.remove(
             "loading"
         );
 
+
+        statusDot.classList.remove(
+            "error"
+        );
+
+
         monitorStatusText.textContent =
             "실시간 팔로워 감시 중";
+
+
+        /*
+         * 기존 polling이 있다면 제거
+         */
+
+        if (pollingTimer) {
+
+            clearInterval(
+                pollingTimer
+            );
+
+        }
 
 
         /*
@@ -840,18 +1276,26 @@ async function startMonitoring() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Monitoring start error:",
+            error
+        );
+
 
         statusDot.classList.remove(
             "loading"
         );
 
+
         statusDot.classList.add(
             "error"
         );
 
+
         monitorStatusText.textContent =
+            error.message ||
             "팔로워 정보를 가져오지 못했습니다.";
+
 
         monitoring = false;
 
@@ -866,24 +1310,54 @@ async function startMonitoring() {
 
 async function pollFollowers() {
 
+    /*
+     * 이전 polling이 아직 끝나지 않았다면
+     * 이번 요청은 건너뛴다.
+     *
+     * API가 느릴 경우 요청이 계속 겹치는
+     * 문제를 방지한다.
+     */
+
+    if (pollingInProgress) {
+
+        console.log(
+            "이전 polling이 아직 진행 중입니다."
+        );
+
+        return;
+
+    }
+
+
+    pollingInProgress = true;
+
+
     try {
 
         /*
-         * 공식 API:
-         * 현재 팔로워 수
+         * 중요:
+         *
+         * 두 API를 동시에 호출한다.
+         *
+         * /api/me
+         * /api/followers
+         *
+         * 둘 중 하나가 끝날 때까지
+         * 다른 하나를 기다리지 않는다.
          */
 
-        await refreshFollowerCount();
+        const [
+            _,
+            followers
+        ] = await Promise.all([
+            refreshFollowerCount(),
+            fetchFollowers()
+        ]);
 
 
         /*
-         * 비공식 API:
-         * 전체 팔로워 목록
+         * 현재 팔로워 목록
          */
-
-        const followers =
-            await fetchFollowers();
-
 
         const currentFollowers =
             makeFollowerMap(
@@ -904,6 +1378,7 @@ async function pollFollowers() {
             "error"
         );
 
+
         monitorStatusText.textContent =
             "실시간 팔로워 감시 중";
 
@@ -920,8 +1395,13 @@ async function pollFollowers() {
             "error"
         );
 
+
         monitorStatusText.textContent =
             "팔로워 정보를 다시 확인하는 중...";
+
+    } finally {
+
+        pollingInProgress = false;
 
     }
 
@@ -936,6 +1416,8 @@ function stopMonitoring() {
 
     monitoring = false;
 
+    pollingInProgress = false;
+
 
     if (pollingTimer) {
 
@@ -949,6 +1431,8 @@ function stopMonitoring() {
 
 
     previousFollowers.clear();
+
+    hasInitialSnapshot = false;
 
 }
 
@@ -977,6 +1461,10 @@ function formatTime(date) {
 
 }
 
+
+/* ========================================= */
+/* 활동 시간 */
+/* ========================================= */
 
 function formatActivityTime(date) {
 
