@@ -1,3 +1,4 @@
+```javascript
 const loginSection = document.getElementById("login-section");
 const userSection = document.getElementById("user-section");
 
@@ -47,10 +48,6 @@ let previousFollowers = new Map();
 
 /*
  * 최초 목록을 이미 저장했는지 여부
- *
- * 기존 코드에서는 previousFollowers.size === 0
- * 을 최초 조회 여부로 사용했기 때문에
- * 팔로워가 0명인 경우 문제가 생길 수 있었다.
  */
 let hasInitialSnapshot = false;
 
@@ -70,9 +67,14 @@ const profileCache = new Map();
 let displayedFollowerCount = 0;
 
 /*
- * 숫자 애니메이션
+ * 롤링 카운터 초기화 여부
  */
-let counterAnimationFrame = null;
+let rollingCounterInitialized = false;
+
+/*
+ * 롤링 카운터 애니메이션
+ */
+let rollingAnimationFrame = null;
 
 /*
  * polling 중복 실행 방지
@@ -81,12 +83,748 @@ let pollingInProgress = false;
 
 
 /* ========================================= */
+/* 롤링 카운터 CSS */
+/* ========================================= */
+
+function initRollingCounterStyle() {
+
+    if (
+        document.getElementById(
+            "rolling-follower-counter-style"
+        )
+    ) {
+        return;
+    }
+
+
+    const style =
+        document.createElement("style");
+
+
+    style.id =
+        "rolling-follower-counter-style";
+
+
+    style.textContent = `
+
+        #follower-count.rolling-counter {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            white-space: nowrap;
+
+            overflow: visible;
+
+            line-height: 1;
+
+        }
+
+
+        #follower-count
+        .rolling-digit {
+
+            position: relative;
+
+            display: inline-block;
+
+            width: 0.68em;
+
+            height: 1.15em;
+
+            overflow: hidden;
+
+            vertical-align: middle;
+
+            flex: 0 0 0.68em;
+
+        }
+
+
+        #follower-count
+        .rolling-track {
+
+            position: absolute;
+
+            left: 0;
+
+            top: 0;
+
+            width: 100%;
+
+            display: flex;
+
+            flex-direction: column;
+
+            transform: translateY(0);
+
+            will-change: transform;
+
+        }
+
+
+        #follower-count
+        .rolling-number {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            width: 100%;
+
+            height: 1.15em;
+
+            flex: 0 0 1.15em;
+
+            line-height: 1;
+
+        }
+
+
+        #follower-count
+        .rolling-comma {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            width: 0.25em;
+
+            height: 1.15em;
+
+            flex: 0 0 0.25em;
+
+            line-height: 1;
+
+        }
+
+
+        #follower-count
+        .rolling-track.rolling-moving {
+
+            transition:
+                transform
+                0.55s
+                cubic-bezier(
+                    0.22,
+                    0.61,
+                    0.36,
+                    1
+                );
+
+        }
+
+    `;
+
+
+    document.head.appendChild(style);
+
+}
+
+
+/* ========================================= */
+/* 롤링 숫자 슬롯 생성 */
+/* ========================================= */
+
+function createRollingDigit(
+    digit
+) {
+
+    const wrapper =
+        document.createElement("span");
+
+
+    wrapper.className =
+        "rolling-digit";
+
+
+    const track =
+        document.createElement("span");
+
+
+    track.className =
+        "rolling-track";
+
+
+    /*
+     * 0~9를 여러 번 반복한다.
+     *
+     * 가운데 영역을 현재 위치로 사용하기
+     * 때문에 위/아래로 충분히 움직일 수 있다.
+     */
+
+    const repeatCount = 5;
+
+
+    for (
+        let repeat = 0;
+        repeat < repeatCount;
+        repeat++
+    ) {
+
+        for (
+            let number = 0;
+            number <= 9;
+            number++
+        ) {
+
+            const numberElement =
+                document.createElement("span");
+
+
+            numberElement.className =
+                "rolling-number";
+
+
+            numberElement.textContent =
+                number;
+
+
+            track.appendChild(
+                numberElement
+            );
+
+        }
+
+    }
+
+
+    wrapper.appendChild(
+        track
+    );
+
+
+    /*
+     * 가운데 반복 영역의 시작 위치.
+     *
+     * 5회 반복 중 3번째 영역을 사용한다.
+     */
+
+    const initialIndex =
+        20 + digit;
+
+
+    track.style.transform =
+        `translateY(-${initialIndex * 1.15}em)`;
+
+
+    wrapper.dataset.index =
+        String(initialIndex);
+
+
+    wrapper.dataset.digit =
+        String(digit);
+
+
+    return wrapper;
+
+}
+
+
+/* ========================================= */
+/* 롤링 카운터 전체 생성 */
+/* ========================================= */
+
+function buildRollingCounter(
+    value
+) {
+
+    initRollingCounterStyle();
+
+
+    const formatted =
+        Number(value || 0)
+            .toLocaleString("ko-KR");
+
+
+    followerCount.innerHTML = "";
+
+
+    followerCount.classList.add(
+        "rolling-counter"
+    );
+
+
+    for (
+        const character
+        of formatted
+    ) {
+
+        /*
+         * 콤마
+         */
+
+        if (character === ",") {
+
+            const comma =
+                document.createElement("span");
+
+
+            comma.className =
+                "rolling-comma";
+
+
+            comma.textContent =
+                ",";
+
+
+            followerCount.appendChild(
+                comma
+            );
+
+
+            continue;
+
+        }
+
+
+        /*
+         * 숫자
+         */
+
+        const digit =
+            createRollingDigit(
+                Number(character)
+            );
+
+
+        followerCount.appendChild(
+            digit
+        );
+
+    }
+
+
+    rollingCounterInitialized =
+        true;
+
+}
+
+
+/* ========================================= */
+/* 롤링 카운터 숫자 업데이트 */
+/* ========================================= */
+
+function animateRollingFollowerCount(
+    targetCount
+) {
+
+    const target =
+        Math.max(
+            0,
+            Number(targetCount) || 0
+        );
+
+
+    /*
+     * 최초 표시
+     */
+
+    if (
+        !rollingCounterInitialized
+    ) {
+
+        displayedFollowerCount =
+            target;
+
+
+        buildRollingCounter(
+            target
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+     * 같은 숫자면 아무것도 하지 않는다.
+     */
+
+    if (
+        displayedFollowerCount === target
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * 기존 애니메이션이 있다면 취소
+     */
+
+    if (rollingAnimationFrame) {
+
+        cancelAnimationFrame(
+            rollingAnimationFrame
+        );
+
+        rollingAnimationFrame = null;
+
+    }
+
+
+    /*
+     * 현재 표시값과 목표값
+     */
+
+    const startValue =
+        displayedFollowerCount;
+
+
+    /*
+     * 자리수가 달라지는 경우
+     *
+     * 예:
+     *
+     * 999 → 1,000
+     * 1,000 → 999
+     *
+     * 전체 슬롯 구조를 새로 만든다.
+     */
+
+    const oldFormatted =
+        startValue.toLocaleString(
+            "ko-KR"
+        );
+
+
+    const newFormatted =
+        target.toLocaleString(
+            "ko-KR"
+        );
+
+
+    if (
+        oldFormatted.length !==
+        newFormatted.length
+    ) {
+
+        /*
+         * 숫자 구조가 바뀌기 직전에
+         * 현재 숫자를 기준으로 한 번 렌더링.
+         */
+
+        buildRollingCounter(
+            startValue
+        );
+
+
+        /*
+         * 다음 프레임에 목표 숫자로
+         * 슬롯을 변경한다.
+         */
+
+        rollingAnimationFrame =
+            requestAnimationFrame(() => {
+
+                buildRollingCounter(
+                    target
+                );
+
+
+                displayedFollowerCount =
+                    target;
+
+
+                rollingAnimationFrame =
+                    null;
+
+            });
+
+
+        return;
+
+    }
+
+
+    /*
+     * 현재 숫자의 각 자리
+     */
+
+    const oldCharacters =
+        oldFormatted.split("");
+
+
+    /*
+     * 목표 숫자의 각 자리
+     */
+
+    const newCharacters =
+        newFormatted.split("");
+
+
+    /*
+     * 숫자 슬롯
+     */
+
+    const digitSlots =
+        Array.from(
+            followerCount.querySelectorAll(
+                ".rolling-digit"
+            )
+        );
+
+
+    /*
+     * 전체 증가/감소 방향
+     */
+
+    const direction =
+        target > startValue
+            ? 1
+            : -1;
+
+
+    let digitSlotIndex = 0;
+
+
+    for (
+        let i = 0;
+        i < newCharacters.length;
+        i++
+    ) {
+
+        const newCharacter =
+            newCharacters[i];
+
+
+        /*
+         * 콤마는 숫자 슬롯이 아니므로
+         * 건너뛴다.
+         */
+
+        if (
+            newCharacter === ","
+        ) {
+
+            continue;
+
+        }
+
+
+        const oldCharacter =
+            oldCharacters[i];
+
+
+        const slot =
+            digitSlots[
+                digitSlotIndex
+            ];
+
+
+        digitSlotIndex++;
+
+
+        if (!slot) {
+            continue;
+        }
+
+
+        const track =
+            slot.querySelector(
+                ".rolling-track"
+            );
+
+
+        if (!track) {
+            continue;
+        }
+
+
+        const oldDigit =
+            Number(oldCharacter);
+
+
+        const newDigit =
+            Number(newCharacter);
+
+
+        /*
+         * 같은 숫자는 움직이지 않는다.
+         */
+
+        if (
+            oldDigit === newDigit
+        ) {
+
+            continue;
+
+        }
+
+
+        let currentIndex =
+            Number(
+                slot.dataset.index
+            );
+
+
+        /*
+         * 증가:
+         *
+         * 2 → 3
+         * 8 → 9
+         * 9 → 0
+         *
+         * 모두 위쪽으로 이동.
+         */
+
+        if (
+            direction > 0
+        ) {
+
+            let difference =
+                newDigit -
+                oldDigit;
+
+
+            if (
+                difference <= 0
+            ) {
+
+                difference += 10;
+
+            }
+
+
+            currentIndex +=
+                difference;
+
+        }
+
+
+        /*
+         * 감소:
+         *
+         * 8 → 7
+         * 2 → 1
+         *
+         * 아래쪽으로 이동.
+         */
+
+        else {
+
+            let difference =
+                oldDigit -
+                newDigit;
+
+
+            if (
+                difference <= 0
+            ) {
+
+                difference += 10;
+
+            }
+
+
+            currentIndex -=
+                difference;
+
+        }
+
+
+        /*
+         * 안전 범위.
+         *
+         * 슬롯 중앙 부근에서 계속
+         * 굴러가도록 유지한다.
+         */
+
+        if (
+            currentIndex > 35
+        ) {
+
+            currentIndex -= 20;
+
+        }
+
+
+        if (
+            currentIndex < 5
+        ) {
+
+            currentIndex += 20;
+
+        }
+
+
+        slot.dataset.index =
+            String(currentIndex);
+
+
+        slot.dataset.digit =
+            String(newDigit);
+
+
+        track.classList.add(
+            "rolling-moving"
+        );
+
+
+        track.style.transform =
+            `translateY(-${currentIndex * 1.15}em)`;
+
+
+        /*
+         * 애니메이션이 끝난 뒤
+         * 클래스만 제거한다.
+         */
+
+        window.setTimeout(
+            () => {
+
+                track.classList.remove(
+                    "rolling-moving"
+                );
+
+            },
+            600
+        );
+
+    }
+
+
+    displayedFollowerCount =
+        target;
+
+}
+
+
+/* ========================================= */
+/* 팔로워 수 갱신 */
+/* ========================================= */
+
+function updateFollowerCount(count) {
+
+    const number =
+        Number(count || 0);
+
+
+    animateRollingFollowerCount(
+        number
+    );
+
+}
+
+
+/* ========================================= */
 /* 로그인 */
 /* ========================================= */
 
 loginButton.addEventListener("click", () => {
 
-    window.location.href = "/api/login";
+    window.location.href =
+        "/api/login";
 
 });
 
@@ -95,92 +833,147 @@ loginButton.addEventListener("click", () => {
 /* 로그아웃 */
 /* ========================================= */
 
-logoutButton.addEventListener("click", async () => {
+logoutButton.addEventListener(
+    "click",
+    async () => {
 
-    logoutButton.disabled = true;
+        logoutButton.disabled = true;
 
-    stopMonitoring();
 
-    monitorStatusText.textContent =
-        "로그아웃하는 중...";
+        stopMonitoring();
 
-    try {
 
-        const response = await fetch(
-            "/api/logout",
-            {
-                method: "POST"
+        monitorStatusText.textContent =
+            "로그아웃하는 중...";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/logout",
+                    {
+                        method: "POST"
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "로그아웃에 실패했습니다."
+                );
+
             }
-        );
 
-        const data = await response.json();
 
-        if (!response.ok) {
-
-            throw new Error(
-                data.error ||
-                "로그아웃에 실패했습니다."
+            loginSection.classList.remove(
+                "hidden"
             );
 
-        }
 
-        loginSection.classList.remove("hidden");
-
-        userSection.classList.add("hidden");
-
-        /*
-         * 상태 초기화
-         */
-        currentChannelId = null;
-
-        previousFollowers.clear();
-
-        hasInitialSnapshot = false;
-
-        activityItems = [];
-
-        profileCache.clear();
-
-        displayedFollowerCount = 0;
-
-        if (counterAnimationFrame) {
-
-            cancelAnimationFrame(
-                counterAnimationFrame
+            userSection.classList.add(
+                "hidden"
             );
 
-            counterAnimationFrame = null;
+
+            /*
+             * 상태 초기화
+             */
+
+            currentChannelId =
+                null;
+
+
+            previousFollowers.clear();
+
+
+            hasInitialSnapshot =
+                false;
+
+
+            activityItems = [];
+
+
+            profileCache.clear();
+
+
+            displayedFollowerCount =
+                0;
+
+
+            rollingCounterInitialized =
+                false;
+
+
+            if (
+                rollingAnimationFrame
+            ) {
+
+                cancelAnimationFrame(
+                    rollingAnimationFrame
+                );
+
+
+                rollingAnimationFrame =
+                    null;
+
+            }
+
+
+            followerCount.innerHTML =
+                "0";
+
+
+            followerCount.classList.remove(
+                "rolling-counter"
+            );
+
+
+            channelName.textContent =
+                "-";
+
+
+            channelId.textContent =
+                "-";
+
+
+            profileImage.removeAttribute(
+                "src"
+            );
+
+
+            renderActivities();
+
+
+            monitorStatusText.textContent =
+                "로그아웃되었습니다.";
+
+
+        } catch (error) {
+
+            console.error(error);
+
+
+            monitorStatusText.textContent =
+                error.message ||
+                "로그아웃 중 오류가 발생했습니다.";
+
+
+        } finally {
+
+            logoutButton.disabled =
+                false;
 
         }
-
-        followerCount.textContent = "0";
-
-        channelName.textContent = "-";
-
-        channelId.textContent = "-";
-
-        profileImage.removeAttribute("src");
-
-        renderActivities();
-
-        monitorStatusText.textContent =
-            "로그아웃되었습니다.";
-
-    } catch (error) {
-
-        console.error(error);
-
-        monitorStatusText.textContent =
-            error.message ||
-            "로그아웃 중 오류가 발생했습니다.";
-
-    } finally {
-
-        logoutButton.disabled = false;
 
     }
-
-});
+);
 
 
 /* ========================================= */
@@ -191,27 +984,40 @@ async function loadUser() {
 
     try {
 
-        const response = await fetch(
-            "/api/me",
-            {
-                method: "GET",
-                cache: "no-store"
-            }
-        );
+        const response =
+            await fetch(
+                "/api/me",
+                {
+                    method: "GET",
+                    cache: "no-store"
+                }
+            );
 
-        const data = await response.json();
+
+        const data =
+            await response.json();
+
 
         if (!response.ok) {
 
-            if (response.status === 401) {
+            if (
+                response.status === 401
+            ) {
 
-                loginSection.classList.remove("hidden");
+                loginSection.classList.remove(
+                    "hidden"
+                );
 
-                userSection.classList.add("hidden");
+
+                userSection.classList.add(
+                    "hidden"
+                );
+
 
                 return false;
 
             }
+
 
             throw new Error(
                 data.error ||
@@ -221,9 +1027,14 @@ async function loadUser() {
         }
 
 
-        loginSection.classList.add("hidden");
+        loginSection.classList.add(
+            "hidden"
+        );
 
-        userSection.classList.remove("hidden");
+
+        userSection.classList.remove(
+            "hidden"
+        );
 
 
         currentChannelId =
@@ -238,7 +1049,9 @@ async function loadUser() {
             data.channelId || "-";
 
 
-        if (data.channelImageUrl) {
+        if (
+            data.channelImageUrl
+        ) {
 
             setProfileImage(
                 profileImage,
@@ -247,195 +1060,50 @@ async function loadUser() {
 
         } else {
 
-            profileImage.removeAttribute("src");
+            profileImage.removeAttribute(
+                "src"
+            );
 
         }
 
 
         /*
-         * 최초 로그인 시에는
-         * 숫자를 바로 표시한다.
+         * 최초 로그인 시
+         * 롤링 카운터를 생성한다.
          */
-        displayedFollowerCount =
-            Number(data.followerCount || 0);
 
-        followerCount.textContent =
-            displayedFollowerCount.toLocaleString(
-                "ko-KR"
+        displayedFollowerCount =
+            Number(
+                data.followerCount || 0
             );
 
 
+        buildRollingCounter(
+            displayedFollowerCount
+        );
+
+
         return true;
+
 
     } catch (error) {
 
         console.error(error);
 
-        loginSection.classList.remove("hidden");
 
-        userSection.classList.add("hidden");
+        loginSection.classList.remove(
+            "hidden"
+        );
+
+
+        userSection.classList.add(
+            "hidden"
+        );
+
 
         return false;
 
     }
-
-}
-
-
-/* ========================================= */
-/* 팔로워 수 애니메이션 */
-/* ========================================= */
-
-function animateFollowerCount(targetCount) {
-
-    targetCount =
-        Number(targetCount) || 0;
-
-    /*
-     * 이미 같은 숫자라면
-     * 애니메이션을 실행하지 않는다.
-     */
-    if (
-        displayedFollowerCount === targetCount
-    ) {
-
-        followerCount.textContent =
-            targetCount.toLocaleString("ko-KR");
-
-        return;
-
-    }
-
-
-    /*
-     * 기존 애니메이션 취소
-     */
-    if (counterAnimationFrame) {
-
-        cancelAnimationFrame(
-            counterAnimationFrame
-        );
-
-        counterAnimationFrame = null;
-
-    }
-
-
-    const startCount =
-        displayedFollowerCount;
-
-
-    const difference =
-        Math.abs(
-            targetCount - startCount
-        );
-
-
-    /*
-     * 변화량에 따라 애니메이션 속도 조절
-     */
-    const duration =
-        Math.min(
-            900,
-            Math.max(
-                300,
-                difference * 100
-            )
-        );
-
-
-    const startTime =
-        performance.now();
-
-
-    function update(currentTime) {
-
-        const elapsed =
-            currentTime - startTime;
-
-
-        const progress =
-            Math.min(
-                elapsed / duration,
-                1
-            );
-
-
-        /*
-         * ease-out
-         */
-        const eased =
-            1 -
-            Math.pow(
-                1 - progress,
-                3
-            );
-
-
-        const currentValue =
-            Math.round(
-                startCount +
-                (
-                    targetCount -
-                    startCount
-                ) *
-                eased
-            );
-
-
-        displayedFollowerCount =
-            currentValue;
-
-
-        followerCount.textContent =
-            currentValue.toLocaleString(
-                "ko-KR"
-            );
-
-
-        if (progress < 1) {
-
-            counterAnimationFrame =
-                requestAnimationFrame(
-                    update
-                );
-
-        } else {
-
-            displayedFollowerCount =
-                targetCount;
-
-            followerCount.textContent =
-                targetCount.toLocaleString(
-                    "ko-KR"
-                );
-
-            counterAnimationFrame =
-                null;
-
-        }
-
-    }
-
-
-    counterAnimationFrame =
-        requestAnimationFrame(
-            update
-        );
-
-}
-
-
-/* ========================================= */
-/* 팔로워 수 갱신 */
-/* ========================================= */
-
-function updateFollowerCount(count) {
-
-    const number =
-        Number(count || 0);
-
-    animateFollowerCount(number);
 
 }
 
@@ -446,15 +1114,19 @@ function updateFollowerCount(count) {
 
 async function refreshFollowerCount() {
 
-    const response = await fetch(
-        "/api/me",
-        {
-            method: "GET",
-            cache: "no-store"
-        }
-    );
+    const response =
+        await fetch(
+            "/api/me",
+            {
+                method: "GET",
+                cache: "no-store"
+            }
+        );
 
-    const data = await response.json();
+
+    const data =
+        await response.json();
+
 
     if (!response.ok) {
 
@@ -475,7 +1147,10 @@ async function refreshFollowerCount() {
      * 채널 정보가 변경될 경우
      * 프로필 이미지도 갱신
      */
-    if (data.channelImageUrl) {
+
+    if (
+        data.channelImageUrl
+    ) {
 
         setProfileImage(
             profileImage,
@@ -509,17 +1184,24 @@ async function refreshFollowerCount() {
 
 async function fetchFollowers() {
 
-    const response = await fetch(
-        "/api/followers",
-        {
-            method: "GET",
-            cache: "no-store"
-        }
-    );
+    const response =
+        await fetch(
+            "/api/followers",
+            {
+                method: "GET",
+                cache: "no-store"
+            }
+        );
 
-    const data = await response.json();
 
-    if (!response.ok || !data.success) {
+    const data =
+        await response.json();
+
+
+    if (
+        !response.ok ||
+        !data.success
+    ) {
 
         throw new Error(
             data.error ||
@@ -529,7 +1211,9 @@ async function fetchFollowers() {
     }
 
 
-    return Array.isArray(data.followers)
+    return Array.isArray(
+        data.followers
+    )
         ? data.followers
         : [];
 
@@ -542,10 +1226,14 @@ async function fetchFollowers() {
 
 function makeFollowerMap(followers) {
 
-    const map = new Map();
+    const map =
+        new Map();
 
 
-    for (const follower of followers) {
+    for (
+        const follower
+        of followers
+    ) {
 
         if (!follower) {
             continue;
@@ -585,22 +1273,25 @@ function makeFollowerMap(followers) {
 /* 팔로워 변화 확인 */
 /* ========================================= */
 
-function compareFollowers(currentFollowers) {
+function compareFollowers(
+    currentFollowers
+) {
 
     /*
      * 최초 조회
-     *
-     * 기존 코드처럼 size === 0 을 사용하지 않는다.
-     *
-     * 팔로워가 0명이어도 최초 스냅샷으로
-     * 정확하게 기록된다.
      */
-    if (!hasInitialSnapshot) {
+
+    if (
+        !hasInitialSnapshot
+    ) {
 
         previousFollowers =
             currentFollowers;
 
-        hasInitialSnapshot = true;
+
+        hasInitialSnapshot =
+            true;
+
 
         return;
 
@@ -616,9 +1307,13 @@ function compareFollowers(currentFollowers) {
         of currentFollowers
     ) {
 
-        if (!previousFollowers.has(id)) {
+        if (
+            !previousFollowers.has(id)
+        ) {
 
-            handleFollow(follower);
+            handleFollow(
+                follower
+            );
 
         }
 
@@ -634,9 +1329,13 @@ function compareFollowers(currentFollowers) {
         of previousFollowers
     ) {
 
-        if (!currentFollowers.has(id)) {
+        if (
+            !currentFollowers.has(id)
+        ) {
 
-            handleUnfollow(follower);
+            handleUnfollow(
+                follower
+            );
 
         }
 
@@ -644,7 +1343,7 @@ function compareFollowers(currentFollowers) {
 
 
     /*
-     * 현재 상태를 다음 비교 기준으로 저장
+     * 현재 상태 저장
      */
 
     previousFollowers =
@@ -657,7 +1356,9 @@ function compareFollowers(currentFollowers) {
 /* 팔로우 처리 */
 /* ========================================= */
 
-function handleFollow(follower) {
+function handleFollow(
+    follower
+) {
 
     console.log(
         "새 팔로워:",
@@ -666,20 +1367,13 @@ function handleFollow(follower) {
 
 
     /*
-     * 중요:
-     *
-     * 기존에는 getProfileInfo()를
-     * await한 다음 활동을 표시했다.
-     *
-     * 그래서 프로필 API가 늦으면
-     * 팔로우 표시 자체가 늦어졌다.
-     *
-     * 이제는 팔로우를 감지하면
-     * 활동을 먼저 즉시 표시한다.
+     * 활동을 즉시 표시한다.
      */
 
     const activity = {
-        type: "follow",
+
+        type:
+            "follow",
 
         channelId:
             follower.channelId,
@@ -696,16 +1390,23 @@ function handleFollow(follower) {
 
         time:
             new Date()
+
     };
 
 
-    addActivity(activity);
+    addActivity(
+        activity
+    );
 
 
     /*
-     * 프로필 정보는 뒤에서 비동기로 가져온다.
+     * 프로필 정보는
+     * 뒤에서 비동기로 가져온다.
      */
-    loadActivityProfile(activity);
+
+    loadActivityProfile(
+        activity
+    );
 
 }
 
@@ -714,7 +1415,9 @@ function handleFollow(follower) {
 /* 언팔로우 처리 */
 /* ========================================= */
 
-function handleUnfollow(follower) {
+function handleUnfollow(
+    follower
+) {
 
     console.log(
         "팔로워 취소:",
@@ -727,7 +1430,9 @@ function handleUnfollow(follower) {
      */
 
     const activity = {
-        type: "unfollow",
+
+        type:
+            "unfollow",
 
         channelId:
             follower.channelId,
@@ -744,16 +1449,23 @@ function handleUnfollow(follower) {
 
         time:
             new Date()
+
     };
 
 
-    addActivity(activity);
+    addActivity(
+        activity
+    );
 
 
     /*
-     * 프로필 정보는 별도로 가져온다.
+     * 프로필 정보는
+     * 별도로 가져온다.
      */
-    loadActivityProfile(activity);
+
+    loadActivityProfile(
+        activity
+    );
 
 }
 
@@ -762,7 +1474,9 @@ function handleUnfollow(follower) {
 /* 활동 프로필 정보 비동기 로딩 */
 /* ========================================= */
 
-async function loadActivityProfile(activity) {
+async function loadActivityProfile(
+    activity
+) {
 
     if (!activity.channelId) {
         return;
@@ -777,12 +1491,9 @@ async function loadActivityProfile(activity) {
             );
 
 
-        /*
-         * 프로필 정보를 받은 후
-         * 활동 데이터만 갱신한다.
-         */
-
-        if (profile.channelName) {
+        if (
+            profile.channelName
+        ) {
 
             activity.channelName =
                 profile.channelName;
@@ -790,7 +1501,9 @@ async function loadActivityProfile(activity) {
         }
 
 
-        if (profile.channelImageUrl) {
+        if (
+            profile.channelImageUrl
+        ) {
 
             activity.channelImageUrl =
                 profile.channelImageUrl;
@@ -798,10 +1511,8 @@ async function loadActivityProfile(activity) {
         }
 
 
-        /*
-         * 활동 목록을 다시 그린다.
-         */
         renderActivities();
+
 
     } catch (error) {
 
@@ -819,39 +1530,52 @@ async function loadActivityProfile(activity) {
 /* 유저 프로필 정보 */
 /* ========================================= */
 
-async function getProfileInfo(channelId) {
+async function getProfileInfo(
+    channelId
+) {
 
     if (!channelId) {
 
         return {
-            channelName: null,
-            channelImageUrl: null
+
+            channelName:
+                null,
+
+            channelImageUrl:
+                null
+
         };
 
     }
 
 
     /*
-     * 이미 가져온 유저라면
-     * 다시 요청하지 않는다.
+     * 캐시 사용
      */
 
-    if (profileCache.has(channelId)) {
+    if (
+        profileCache.has(
+            channelId
+        )
+    ) {
 
-        return profileCache.get(channelId);
+        return profileCache.get(
+            channelId
+        );
 
     }
 
 
     try {
 
-        const response = await fetch(
-            `/api/channel?channelId=${encodeURIComponent(channelId)}`,
-            {
-                method: "GET",
-                cache: "no-store"
-            }
-        );
+        const response =
+            await fetch(
+                `/api/channel?channelId=${encodeURIComponent(channelId)}`,
+                {
+                    method: "GET",
+                    cache: "no-store"
+                }
+            );
 
 
         if (!response.ok) {
@@ -888,6 +1612,7 @@ async function getProfileInfo(channelId) {
 
         return profile;
 
+
     } catch (error) {
 
         console.error(
@@ -896,17 +1621,13 @@ async function getProfileInfo(channelId) {
         );
 
 
-        /*
-         * 실패한 경우에도 캐시에 저장해서
-         * 매 polling마다 같은 유저에게
-         * 계속 요청하지 않도록 한다.
-         */
-
         const fallback = {
 
-            channelName: null,
+            channelName:
+                null,
 
-            channelImageUrl: null
+            channelImageUrl:
+                null
 
         };
 
@@ -928,7 +1649,10 @@ async function getProfileInfo(channelId) {
 /* 프로필 이미지 설정 */
 /* ========================================= */
 
-function setProfileImage(imageElement, imageUrl) {
+function setProfileImage(
+    imageElement,
+    imageUrl
+) {
 
     if (
         !imageElement ||
@@ -938,26 +1662,25 @@ function setProfileImage(imageElement, imageUrl) {
     }
 
 
-    /*
-     * 기존 onerror 제거
-     */
-    imageElement.onerror = null;
+    imageElement.onerror =
+        null;
 
 
-    /*
-     * 이미지 로딩 실패 시
-     * 깨진 이미지 아이콘이 계속 보이지 않게 한다.
-     */
-    imageElement.onerror = () => {
+    imageElement.onerror =
+        () => {
 
-        imageElement.onerror = null;
+            imageElement.onerror =
+                null;
 
-        imageElement.removeAttribute("src");
+            imageElement.removeAttribute(
+                "src"
+            );
 
-    };
+        };
 
 
-    imageElement.src = imageUrl;
+    imageElement.src =
+        imageUrl;
 
 }
 
@@ -966,7 +1689,9 @@ function setProfileImage(imageElement, imageUrl) {
 /* 활동 추가 */
 /* ========================================= */
 
-function addActivity(activity) {
+function addActivity(
+    activity
+) {
 
     activityItems.unshift(
         activity
@@ -977,10 +1702,15 @@ function addActivity(activity) {
      * 최근 100개만 유지
      */
 
-    if (activityItems.length > 100) {
+    if (
+        activityItems.length > 100
+    ) {
 
         activityItems =
-            activityItems.slice(0, 100);
+            activityItems.slice(
+                0,
+                100
+            );
 
     }
 
@@ -996,16 +1726,22 @@ function addActivity(activity) {
 
 function renderActivities() {
 
-    activityList.innerHTML = "";
+    activityList.innerHTML =
+        "";
 
 
-    if (activityItems.length === 0) {
+    if (
+        activityItems.length === 0
+    ) {
 
         activityList.appendChild(
             emptyActivity
         );
 
-        activityCount.textContent = "0";
+
+        activityCount.textContent =
+            "0";
+
 
         return;
 
@@ -1013,9 +1749,10 @@ function renderActivities() {
 
 
     activityCount.textContent =
-        activityItems.length.toLocaleString(
-            "ko-KR"
-        );
+        activityItems.length
+            .toLocaleString(
+                "ko-KR"
+            );
 
 
     for (
@@ -1027,6 +1764,7 @@ function renderActivities() {
             createActivityElement(
                 activity
             );
+
 
         activityList.appendChild(
             item
@@ -1041,10 +1779,14 @@ function renderActivities() {
 /* 활동 항목 생성 */
 /* ========================================= */
 
-function createActivityElement(activity) {
+function createActivityElement(
+    activity
+) {
 
     const item =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     item.className =
@@ -1056,7 +1798,9 @@ function createActivityElement(activity) {
      */
 
     const image =
-        document.createElement("img");
+        document.createElement(
+            "img"
+        );
 
 
     image.className =
@@ -1068,10 +1812,9 @@ function createActivityElement(activity) {
         "프로필";
 
 
-    /*
-     * 이미지가 있으면 표시
-     */
-    if (activity.channelImageUrl) {
+    if (
+        activity.channelImageUrl
+    ) {
 
         setProfileImage(
             image,
@@ -1082,17 +1825,13 @@ function createActivityElement(activity) {
 
 
     /*
-     * 이미지가 없을 경우
-     * 빈 이미지 대신 기본 배경 유지
-     */
-
-
-    /*
      * 내용
      */
 
     const content =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     content.className =
@@ -1100,7 +1839,9 @@ function createActivityElement(activity) {
 
 
     const main =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     main.className =
@@ -1108,7 +1849,9 @@ function createActivityElement(activity) {
 
 
     const name =
-        document.createElement("span");
+        document.createElement(
+            "span"
+        );
 
 
     name.className =
@@ -1121,7 +1864,9 @@ function createActivityElement(activity) {
 
 
     const type =
-        document.createElement("span");
+        document.createElement(
+            "span"
+        );
 
 
     type.className =
@@ -1139,13 +1884,20 @@ function createActivityElement(activity) {
             : "언팔로우";
 
 
-    main.appendChild(name);
+    main.appendChild(
+        name
+    );
 
-    main.appendChild(type);
+
+    main.appendChild(
+        type
+    );
 
 
     const time =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     time.className =
@@ -1158,14 +1910,24 @@ function createActivityElement(activity) {
         );
 
 
-    content.appendChild(main);
+    content.appendChild(
+        main
+    );
 
-    content.appendChild(time);
+
+    content.appendChild(
+        time
+    );
 
 
-    item.appendChild(image);
+    item.appendChild(
+        image
+    );
 
-    item.appendChild(content);
+
+    item.appendChild(
+        content
+    );
 
 
     return item;
@@ -1184,16 +1946,26 @@ async function startMonitoring() {
     }
 
 
-    monitoring = true;
-
-    pollingInProgress = false;
-
-    hasInitialSnapshot = false;
+    monitoring =
+        true;
 
 
-    statusDot.classList.remove("error");
+    pollingInProgress =
+        false;
 
-    statusDot.classList.add("loading");
+
+    hasInitialSnapshot =
+        false;
+
+
+    statusDot.classList.remove(
+        "error"
+    );
+
+
+    statusDot.classList.add(
+        "loading"
+    );
 
 
     monitorStatusText.textContent =
@@ -1203,16 +1975,8 @@ async function startMonitoring() {
     try {
 
         /*
-         * 최초 목록과 팔로워 수를
-         * 동시에 가져온다.
-         *
-         * 기존에는
-         *
-         * followers
-         * ↓
-         * /api/me
-         *
-         * 순서였기 때문에 불필요하게 기다렸다.
+         * 팔로워 목록과
+         * 공식 팔로워 수를 동시에 요청
          */
 
         const [
@@ -1233,7 +1997,8 @@ async function startMonitoring() {
             );
 
 
-        hasInitialSnapshot = true;
+        hasInitialSnapshot =
+            true;
 
 
         statusDot.classList.remove(
@@ -1251,7 +2016,7 @@ async function startMonitoring() {
 
 
         /*
-         * 기존 polling이 있다면 제거
+         * 기존 polling 제거
          */
 
         if (pollingTimer) {
@@ -1297,7 +2062,8 @@ async function startMonitoring() {
             "팔로워 정보를 가져오지 못했습니다.";
 
 
-        monitoring = false;
+        monitoring =
+            false;
 
     }
 
@@ -1313,37 +2079,30 @@ async function pollFollowers() {
     /*
      * 이전 polling이 아직 끝나지 않았다면
      * 이번 요청은 건너뛴다.
-     *
-     * API가 느릴 경우 요청이 계속 겹치는
-     * 문제를 방지한다.
      */
 
-    if (pollingInProgress) {
+    if (
+        pollingInProgress
+    ) {
 
         console.log(
             "이전 polling이 아직 진행 중입니다."
         );
+
 
         return;
 
     }
 
 
-    pollingInProgress = true;
+    pollingInProgress =
+        true;
 
 
     try {
 
         /*
-         * 중요:
-         *
-         * 두 API를 동시에 호출한다.
-         *
-         * /api/me
-         * /api/followers
-         *
-         * 둘 중 하나가 끝날 때까지
-         * 다른 하나를 기다리지 않는다.
+         * 두 API를 동시에 호출
          */
 
         const [
@@ -1399,9 +2158,11 @@ async function pollFollowers() {
         monitorStatusText.textContent =
             "팔로워 정보를 다시 확인하는 중...";
 
+
     } finally {
 
-        pollingInProgress = false;
+        pollingInProgress =
+            false;
 
     }
 
@@ -1414,9 +2175,12 @@ async function pollFollowers() {
 
 function stopMonitoring() {
 
-    monitoring = false;
+    monitoring =
+        false;
 
-    pollingInProgress = false;
+
+    pollingInProgress =
+        false;
 
 
     if (pollingTimer) {
@@ -1425,14 +2189,18 @@ function stopMonitoring() {
             pollingTimer
         );
 
-        pollingTimer = null;
+
+        pollingTimer =
+            null;
 
     }
 
 
     previousFollowers.clear();
 
-    hasInitialSnapshot = false;
+
+    hasInitialSnapshot =
+        false;
 
 }
 
@@ -1441,11 +2209,16 @@ function stopMonitoring() {
 /* 시간 */
 /* ========================================= */
 
-function formatTime(date) {
+function formatTime(
+    date
+) {
 
-    if (!(date instanceof Date)) {
+    if (
+        !(date instanceof Date)
+    ) {
 
-        date = new Date(date);
+        date =
+            new Date(date);
 
     }
 
@@ -1466,11 +2239,16 @@ function formatTime(date) {
 /* 활동 시간 */
 /* ========================================= */
 
-function formatActivityTime(date) {
+function formatActivityTime(
+    date
+) {
 
-    if (!(date instanceof Date)) {
+    if (
+        !(date instanceof Date)
+    ) {
 
-        date = new Date(date);
+        date =
+            new Date(date);
 
     }
 
@@ -1488,7 +2266,9 @@ function formatActivityTime(date) {
      * 1분 미만
      */
 
-    if (diff < 60 * 1000) {
+    if (
+        diff < 60 * 1000
+    ) {
 
         return "방금 전";
 
@@ -1499,7 +2279,9 @@ function formatActivityTime(date) {
      * 1시간 미만
      */
 
-    if (diff < 60 * 60 * 1000) {
+    if (
+        diff < 60 * 60 * 1000
+    ) {
 
         return `${Math.floor(
             diff / (60 * 1000)
@@ -1542,3 +2324,4 @@ async function initialize() {
 
 
 initialize();
+```
