@@ -256,74 +256,70 @@ button {
 
 
 /* ========================================= */
-/* 팔로워 카드 (다크/글로우 테마로 리뉴얼) */
+/* 팔로워 카드 */
 /* ========================================= */
 
 .follower-card {
-    padding: 50px 30px 45px;
-    
-    /* 고급스러운 다크 그라데이션 배경 */
-    background: linear-gradient(145deg, #1e1e24, #2a2a35);
-    border-radius: 24px;
-    
-    /* 치지직 메인 컬러(초록색)를 활용한 은은한 후광 효과 */
-    box-shadow: 
-        0 20px 50px rgba(0, 199, 60, 0.15),
-        inset 0 1px 1px rgba(255, 255, 255, 0.1);
-        
+    padding: 42px 25px 38px;
+
+    background: #ffffff;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.06);
+
     text-align: center;
+
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .follower-title {
-    /* 치지직 네온 그린 컬러 */
-    color: #00c73c; 
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    text-shadow: 0 0 12px rgba(0, 199, 60, 0.4);
+    color: #999;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    letter-spacing: 2px;
 }
 
 
 /* ========================================= */
-/* 팔로워 수 (크기 대폭 확대 및 그라데이션) */
+/* 팔로워 수 */
 /* ========================================= */
 
 .follower-count {
-    margin-top: 15px;
+    margin-top: 12px;
+
     width: 100%;
     min-height: 1.15em;
+
     display: flex;
+
     align-items: center;
     justify-content: center;
 
-    /* 메탈릭한 실버/화이트 텍스트 그라데이션 */
-    background: linear-gradient(180deg, #ffffff 0%, #a0a0a0 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #171717;
 
-    /* 크기를 68px -> 100px로 대폭 키움 */
-    font-size: 100px; 
-    line-height: 1.1;
+    font-size: 68px;
+
+    line-height: 1.15;
+
     font-weight: 900;
-    letter-spacing: -2px;
 
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
+    letter-spacing: -1px;
+
+    font-variant-numeric:
+        tabular-nums;
+
+    font-feature-settings:
+        "tnum";
+
     white-space: nowrap;
-    user-select: none;
-    overflow: visible;
-    
-    /* 숫자에 입체감 부여 */
-    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
-}
 
-.last-updated {
-    margin-top: 20px;
-    color: #888;
-    font-size: 12px;
+    user-select: none;
+
+    overflow: visible;
 }
 
 
@@ -667,8 +663,9 @@ button {
     }
 
     .follower-count {
-        font-size: 76px;
-        letter-spacing: -1.5px;
+        font-size: 56px;
+
+        letter-spacing: -1px;
     }
 
     .activity-name {
@@ -685,7 +682,7 @@ button {
 @media (max-width: 380px) {
 
     .follower-count {
-        font-size: 60px;
+        font-size: 48px;
     }
 
 }
