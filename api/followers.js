@@ -154,10 +154,15 @@ export default async function handler(req, res) {
             followerData.content?.data ||
             followerData.content ||
             [];
+            
+        // 💡 추가: JSON에 있는 totalCount를 가져옵니다. (없으면 배열 길이로 대체)
+        const totalCount = 
+            followerData.content?.totalCount || followers.length;
 
         return sendJson(res, 200, {
             success: true,
             channelId,
+            totalCount, // 💡 프론트엔드로 카운트 전달
             followers
         });
 
