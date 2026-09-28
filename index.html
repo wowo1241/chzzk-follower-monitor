@@ -2,7 +2,10 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>CHZZK Follower Monitor</title>
 
@@ -13,26 +16,48 @@
 
     <main class="container">
 
-        <section class="card">
+        <!-- ========================================= -->
+        <!-- 로그인 전 -->
+        <!-- ========================================= -->
 
-            <h1>CHZZK Follower Monitor</h1>
+        <section id="login-section" class="login-page">
 
-            <p class="description">
-                치지직 팔로워 모니터 테스트
-            </p>
+            <div class="login-card">
 
-            <!-- 로그인 전 -->
-            <div id="login-section">
+                <div class="logo">
+                    CHZZK
+                </div>
 
-                <button id="login-button" class="chzzk-button">
+                <h1>Follower Monitor</h1>
+
+                <p class="login-description">
+                    치지직 팔로워 변화를 실시간으로 확인하세요.
+                </p>
+
+                <button
+                    id="login-button"
+                    class="chzzk-button"
+                >
                     CHZZK 로그인
                 </button>
 
             </div>
 
+        </section>
 
-            <!-- 로그인 후 -->
-            <div id="user-section" class="hidden">
+
+        <!-- ========================================= -->
+        <!-- 로그인 후 -->
+        <!-- ========================================= -->
+
+        <section
+            id="user-section"
+            class="dashboard hidden"
+        >
+
+            <!-- 상단 헤더 -->
+
+            <header class="top-header">
 
                 <div class="profile">
 
@@ -63,22 +88,6 @@
                 </div>
 
 
-                <div class="follower-box">
-
-                    <div class="follower-label">
-                        팔로워
-                    </div>
-
-                    <div
-                        id="follower-count"
-                        class="follower-count"
-                    >
-                        0
-                    </div>
-
-                </div>
-
-
                 <button
                     id="logout-button"
                     class="logout-button"
@@ -86,20 +95,117 @@
                     로그아웃
                 </button>
 
-            </div>
+            </header>
 
 
-            <!-- 상태 메시지 -->
-            <div
-                id="status"
-                class="status"
-            >
-                로그인 상태를 확인하는 중...
-            </div>
+            <!-- ========================================= -->
+            <!-- 팔로워 수 -->
+            <!-- ========================================= -->
+
+            <section class="follower-card">
+
+                <div class="follower-title">
+                    FOLLOWERS
+                </div>
+
+                <div
+                    id="follower-count"
+                    class="follower-count"
+                >
+                    0
+                </div>
+
+                <div
+                    id="last-updated"
+                    class="last-updated"
+                >
+                    업데이트 확인 중...
+                </div>
+
+            </section>
+
+
+            <!-- ========================================= -->
+            <!-- 실시간 상태 -->
+            <!-- ========================================= -->
+
+            <section class="monitor-status">
+
+                <span
+                    id="status-dot"
+                    class="status-dot"
+                ></span>
+
+                <span id="monitor-status-text">
+                    팔로워 변화를 확인하는 중...
+                </span>
+
+            </section>
+
+
+            <!-- ========================================= -->
+            <!-- 활동 내역 -->
+            <!-- ========================================= -->
+
+            <section class="activity-card">
+
+                <div class="activity-header">
+
+                    <div>
+                        <h2>실시간 활동</h2>
+
+                        <p>
+                            팔로우 및 언팔로우 활동
+                        </p>
+                    </div>
+
+                    <span
+                        id="activity-count"
+                        class="activity-count"
+                    >
+                        0
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="activity-list"
+                    class="activity-list"
+                >
+
+                    <div
+                        id="empty-activity"
+                        class="empty-activity"
+                    >
+                        아직 확인된 팔로워 활동이 없습니다.
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ========================================= -->
+            <!-- 하단 -->
+            <!-- ========================================= -->
+
+            <footer class="footer">
+
+                <span>
+                    마지막 확인:
+                </span>
+
+                <span id="footer-time">
+                    -
+                </span>
+
+            </footer>
 
         </section>
 
     </main>
+
 
     <script src="/script.js"></script>
 
