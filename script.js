@@ -25,9 +25,6 @@ const emptyActivity =
 const activityCount =
     document.getElementById("activity-count");
 
-const footerTime =
-    document.getElementById("footer-time");
-
 
 /* ========================================= */
 /* 설정 */
@@ -1042,7 +1039,6 @@ async function pollFollowers() {
         const now = new Date();
         const timeText = formatTime(now);
         lastUpdated.textContent = `${timeText} 업데이트`;
-        footerTime.textContent = timeText;
 
     } catch (error) {
         console.error("Polling error:", error);
