@@ -32,14 +32,14 @@ export default async function handler(req, res) {
     }
 
     try {
-        // ----------------------------------------
-        // 1. 우리 사이트의 CHZZK OAuth 세션 확인
-        // ----------------------------------------
+        // ============================================
+        // 1. 우리 사이트 로그인 세션 확인
+        // ============================================
         const session = getCookie(req, "chzzk_session");
 
         if (!session) {
             return sendJson(res, 401, {
-                error: "로그인되어 있지 않습니다."
+                error: "로그인이 필요합니다."
             });
         }
 
@@ -63,9 +63,9 @@ export default async function handler(req, res) {
             });
         }
 
-        // ----------------------------------------
-        // 2. 현재 로그인한 CHZZK 사용자 정보 확인
-        // ----------------------------------------
+        // ============================================
+        // 2. 로그인한 사용자의 채널 ID 확인
+        // ============================================
         const userResponse = await fetch(
             "https://openapi.chzzk.naver.com/open/v1/users/me",
             {
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
 
         if (!userResponse.ok || !userData.content) {
             console.error(
-                "CHZZK user API error:",
+                "CHZZK 사용자 정보 오류:",
                 userData
             );
 
@@ -96,25 +96,19 @@ export default async function handler(req, res) {
 
         if (!channelId) {
             return sendJson(res, 400, {
-                error: "CHZZK 채널 ID를 확인할 수 없습니다."
+                error: "채널 ID를 확인할 수 없습니다."
             });
         }
 
-        // ----------------------------------------
-        // 3. 비공식 manage followers API 호출
-        // ----------------------------------------
+        // ============================================
+        // 3. 공식 CHZZK 팔로워 API
+        // ============================================
         const followerUrl = new URL(
-            `https://api.chzzk.naver.com/manage/v1/channels/${channelId}/followers`
+            "https://openapi.chzzk.naver.com/open/v1/channels/followers"
         );
 
         followerUrl.searchParams.set("page", "0");
         followerUrl.searchParams.set("size", "50");
-        followerUrl.searchParams.set("userNickname", "");
-
-        console.log(
-            "Followers API 요청:",
-            followerUrl.toString()
-        );
 
         const followerResponse = await fetch(
             followerUrl.toString(),
@@ -122,54 +116,49 @@ export default async function handler(req, res) {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${accessToken}`,
-                    "Accept": "application/json",
                     "Content-Type": "application/json"
                 }
             }
         );
 
-        const followerText = await followerResponse.text();
-
-        let followerData;
-
-        try {
-            followerData = JSON.parse(followerText);
-        } catch {
-            followerData = {
-                raw: followerText
-            };
-        }
+        const followerData = await followerResponse.json();
 
         console.log(
-            "Followers API 응답 상태:",
+            "Followers API status:",
             followerResponse.status
         );
 
         console.log(
-            "Followers API 응답:",
+            "Followers API response:",
             followerData
         );
 
-        // ----------------------------------------
-        // 4. 결과 그대로 확인
-        // ----------------------------------------
+        // ============================================
+        // 4. 권한 오류
+        // ============================================
         if (!followerResponse.ok) {
             return sendJson(res, followerResponse.status, {
                 success: false,
-                status: followerResponse.status,
                 channelId,
                 error:
-                    followerData?.message ||
-                    followerData?.error ||
-                    "Followers API 호출에 실패했습니다.",
+                    followerData.message ||
+                    "팔로워 정보를 가져오지 못했습니다.",
                 response: followerData
             });
         }
 
+        // ============================================
+        // 5. 팔로워 데이터 반환
+        // ============================================
+        const followers =
+            followerData.content?.data ||
+            followerData.content ||
+            [];
+
         return sendJson(res, 200, {
             success: true,
             channelId,
-            response: followerData
+            followers
         });
 
     } catch (error) {
