@@ -431,12 +431,11 @@ function animateFollowerCount(targetCount) {
 /* ========================================= */
 
 function updateFollowerCount(count) {
-
-    const number =
-        Number(count || 0);
+    /* 콤마(,)가 포함된 문자열이 넘어와도 에러가 나지 않도록 콤마 제거 */
+    const cleanNumber = String(count || 0).replace(/,/g, '');
+    const number = Number(cleanNumber) || 0;
 
     animateFollowerCount(number);
-
 }
 
 
@@ -925,40 +924,22 @@ async function getProfileInfo(channelId) {
 
 
 /* ========================================= */
-/* 프로필 이미지 설정 */
+/* 프로필 이미지 설정 (수정됨) */
 /* ========================================= */
-
 function setProfileImage(imageElement, imageUrl) {
-
-    if (
-        !imageElement ||
-        !imageUrl
-    ) {
+    if (!imageElement || !imageUrl) {
         return;
     }
 
+    // 💡 핵심: 외부 이미지(CDN) 로드 시 403 Forbidden / 차단 방지
+    imageElement.setAttribute("referrerpolicy", "no-referrer");
 
-    /*
-     * 기존 onerror 제거
-     */
-    imageElement.onerror = null;
-
-
-    /*
-     * 이미지 로딩 실패 시
-     * 깨진 이미지 아이콘이 계속 보이지 않게 한다.
-     */
     imageElement.onerror = () => {
-
         imageElement.onerror = null;
-
         imageElement.removeAttribute("src");
-
     };
 
-
     imageElement.src = imageUrl;
-
 }
 
 
