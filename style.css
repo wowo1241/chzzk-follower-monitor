@@ -25,7 +25,7 @@ button {
 .container {
     width: 100%;
     min-height: 100vh;
-    padding: 40px 20px;
+    padding: 20px;
 }
 
 /* ========================================= */
@@ -140,10 +140,10 @@ button {
 /* 메인 히어로 카드 (녹스인플루언서 스타일) */
 /* ========================================= */
 .hero-card {
-    padding: 60px 40px;
+    padding: 30px 40px 40px;
     background: #ffffff;
     border-radius: 28px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05); /* 크고 부드러운 그림자 */
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
     text-align: center;
 }
 
@@ -151,30 +151,30 @@ button {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 25px;
 }
 
 .hero-profile img {
-    width: 130px;
-    height: 130px;
+    width: 75px;
+    height: 75px;
     border-radius: 50%;
     object-fit: cover;
     background: #f0f0f0;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    border: 4px solid #ffffff;
-    margin-bottom: 20px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    border: 3px solid #ffffff;
+    margin-bottom: 12px;
 }
 
 .hero-channel-name {
-    font-size: 26px;
+    font-size: 20px;
     font-weight: 900;
     color: #111;
 }
 
 .hero-channel-id {
-    margin-top: 6px;
+    margin-top: 4px;
     color: #999;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .follower-title {
@@ -277,10 +277,9 @@ button {
     font-weight: 700;
 }
 
-/* 💡 핵심: 페이지는 가만히 있고, 박스 안에서만 스크롤되도록 고정 */
 .activity-list {
-    max-height: 450px; /* 박스 최대 높이 고정 */
-    overflow-y: auto;  /* 세로 스크롤 활성화 */
+    max-height: 395px; 
+    overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
 }
@@ -391,27 +390,30 @@ button {
 /* ========================================= */
 @media (max-width: 600px) {
     .container {
-        padding: 20px 15px;
+        padding: 15px;
     }
     .hero-card {
-        padding: 40px 20px;
+        padding: 25px 20px 30px;
     }
     .hero-profile img {
-        width: 100px;
-        height: 100px;
+        width: 65px; /* 모바일 프로필 크기 */
+        height: 65px;
     }
     .hero-channel-name {
-        font-size: 22px;
+        font-size: 18px;
     }
     .follower-count {
-        font-size: 76px; /* 모바일에서도 숫자를 최대한 크게 유지 */
+        font-size: 76px;
         letter-spacing: -2px;
     }
     .activity-header {
         padding: 20px;
     }
     .activity-item {
-        padding: 14px 20px;
+        padding: 14px 20px; /* 모바일 아이템 1개 높이 약 75px */
+    }
+    .activity-list {
+        max-height: 375px; /* 모바일 아이템 높이(75px) * 5개 */
     }
 }
 
