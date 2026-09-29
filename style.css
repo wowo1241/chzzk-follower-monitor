@@ -10,7 +10,7 @@ html, body {
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
-    background: #f4f6f8; /* 눈이 편안한 밝은 배경 */
+    background: #f4f6f8; 
     color: #222;
 }
 
@@ -29,7 +29,7 @@ button {
 }
 
 /* ========================================= */
-/* 로그인 & 로딩 화면 */
+/* 입력 화면 */
 /* ========================================= */
 .login-page {
     min-height: calc(100vh - 80px);
@@ -40,7 +40,7 @@ button {
 
 .login-card {
     width: 100%;
-    max-width: 480px;
+    max-width: 480px; 
     padding: 50px 40px;
     background: #ffffff;
     border-radius: 24px;
@@ -53,21 +53,6 @@ button {
     font-size: 26px;
     font-weight: 900;
     color: #111;
-}
-
-.disconnect-guide {
-    margin-top: 35px;
-    font-size: 12px;
-    color: #999;
-    line-height: 1.5;
-    text-align: center;
-}
-
-.disconnect-guide strong {
-    font-weight: 600;
-    color: #777;
-    display: inline-block;
-    margin-bottom: 5px;
 }
 
 .login-description {
@@ -89,7 +74,7 @@ button {
 }
 
 /* ========================================= */
-/* 로그인 버튼 & 입력창 스타일 */
+/* 버튼 & 입력창 스타일 */
 /* ========================================= */
 .chzzk-button {
     border: none;
@@ -107,43 +92,6 @@ button {
     transform: scale(0.97);
 }
 
-.chzzk-button.primary {
-    width: 100%;
-    padding: 16px;
-    background: #00c73c;
-    color: #ffffff; 
-    box-shadow: 0 4px 15px rgba(0, 199, 60, 0.2);
-}
-.chzzk-button.primary:hover {
-    background: #00a832;
-    box-shadow: 0 6px 20px rgba(0, 199, 60, 0.3);
-}
-
-/* 구분선 */
-.login-divider {
-    position: relative;
-    text-align: center;
-    margin: 30px 0;
-}
-.login-divider::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #eaeaea; 
-}
-.login-divider span {
-    position: relative;
-    background: #ffffff;
-    padding: 0 15px;
-    color: #aaa;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-/* 비로그인 입력 그룹 */
 .guest-input-group {
     display: flex;
     gap: 8px;
@@ -167,6 +115,10 @@ button {
 .chzzk-input::placeholder {
     color: #aaa;
 }
+.chzzk-input.error {
+    border-color: #ff4d4f !important;
+    background: #fffafa !important;
+}
 
 .chzzk-button.secondary {
     padding: 0 24px;
@@ -176,21 +128,31 @@ button {
 .chzzk-button.secondary:hover {
     background: #00a832;
 }
-
-.chzzk-button:hover { opacity: 0.9; }
-.chzzk-button:active { transform: scale(0.98); }
-
-/* 로딩 스피너 */
-.spinner {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 20px;
-    border: 4px solid #f0f0f0;
-    border-top: 4px solid #00c73c;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+.chzzk-button.secondary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
 }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.input-error-message {
+    color: #ff4d4f;
+    font-size: 12px;
+    margin-top: 8px;
+    text-align: left;
+    padding-left: 4px;
+    font-weight: 600;
+}
+
+/* 버튼 짧은 흔들림 애니메이션 */
+.shake {
+    animation: buttonShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes buttonShake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+    40%, 60% { transform: translate3d(3px, 0, 0); }
+}
 
 /* ========================================= */
 /* 대시보드 공통 */
@@ -292,16 +254,6 @@ button {
     font-size: 13px;
 }
 
-/* 💡 [수정사항 2 적용] 안내문구용 클래스 추가 */
-.api-disclaimer {
-    margin-top: 8px;
-    color: #999;
-    font-size: 11px;
-    line-height: 1.4;
-    word-break: keep-all;
-    padding: 0 10px;
-}
-
 /* ========================================= */
 /* 모니터링 상태 */
 /* ========================================= */
@@ -327,149 +279,6 @@ button {
     vertical-align: middle;
 }
 .status-dot.error { background: #ff4d4f; }
-.status-dot.loading { background: #aaa; }
-
-/* ========================================= */
-/* 활동 카드 & 내부 스크롤 목록 */
-/* ========================================= */
-.activity-card {
-    background: #ffffff;
-    border-radius: 24px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-    margin-bottom: 20px;
-}
-
-.activity-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px 28px 20px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.activity-header h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 800;
-}
-
-.activity-header p {
-    margin: 6px 0 0;
-    color: #888;
-    font-size: 13px;
-}
-
-.activity-count {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    background: #f4f4f4;
-    color: #555;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.activity-list {
-    max-height: 158px; 
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-}
-
-.activity-list::-webkit-scrollbar {
-    width: 6px;
-}
-.activity-list::-webkit-scrollbar-track {
-    background: #f9f9f9; 
-}
-.activity-list::-webkit-scrollbar-thumb {
-    background: #ddd; 
-    border-radius: 10px;
-}
-.activity-list::-webkit-scrollbar-thumb:hover {
-    background: #ccc; 
-}
-
-.empty-activity {
-    height: 79px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #aaa;
-    font-size: 14px;
-}
-
-.activity-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 16px 28px;
-    border-bottom: 1px solid #f8f8f8;
-    animation: activity-in 0.3s ease;
-}
-
-@keyframes activity-in {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.activity-image {
-    width: 46px;
-    height: 46px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #eee;
-    border: 1px solid #f0f0f0;
-}
-
-.activity-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.activity-main {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.activity-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #222;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.activity-type {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.activity-type.follow {
-    background: rgba(0, 199, 60, 0.1);
-    color: #00a832;
-}
-
-.activity-type.unfollow {
-    background: rgba(255, 77, 79, 0.1);
-    color: #e33a3c;
-}
-
-.activity-time {
-    margin-top: 5px;
-    color: #999;
-    font-size: 12px;
-}
 
 /* ========================================= */
 /* 모바일 반응형 */
@@ -492,63 +301,10 @@ button {
         font-size: min(76px, 16vw);
         letter-spacing: -2px;
     }
-    .activity-header {
-        padding: 20px;
-    }
-    .activity-item {
-        padding: 14px 20px; 
-    }
-    .activity-list {
-        max-height: 150px; 
-    }
 }
 
 @media (max-width: 380px) {
     .follower-count {
         font-size: min(60px, 16vw);
     }
-}
-
-/* ========================================= */
-/* 로그인 차이점 안내 및 오류 애니메이션 추가 */
-/* ========================================= */
-
-/* 차이점 안내문구 (자연스럽고 연하게) */
-.mode-description {
-    font-size: 12px;
-    color: #888;
-    margin: -4px 0 16px 0;
-    line-height: 1.4;
-    background: rgba(0,0,0,0.02);
-    padding: 10px;
-    border-radius: 8px;
-    word-break: keep-all;
-}
-
-/* 입력창 오류 테두리 */
-.chzzk-input.error {
-    border-color: #ff4d4f !important;
-    background: #fffafa !important;
-}
-
-/* 오류 텍스트 */
-.input-error-message {
-    color: #ff4d4f;
-    font-size: 12px;
-    margin-top: 8px;
-    text-align: left;
-    padding-left: 4px;
-    font-weight: 600;
-}
-
-/* 버튼 짧은 흔들림 애니메이션 */
-.shake {
-    animation: buttonShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-@keyframes buttonShake {
-    10%, 90% { transform: translate3d(-2px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
-    40%, 60% { transform: translate3d(3px, 0, 0); }
 }
