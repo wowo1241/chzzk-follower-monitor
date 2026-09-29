@@ -149,41 +149,29 @@ if (guestButton) {
         loginSection.classList.add("hidden");
 
         try {
-            console.log("[CHZZK 직접 API 테스트] 요청 시작");
-            const url = `https://api.chzzk.naver.com/service/v1/channels/${encodeURIComponent(inputId)}`;
-            console.log("[CHZZK 직접 API 테스트] URL:", url);
-
-            // 💡 Vercel 프록시 대신 CHZZK API 직접 호출 (세션 쿠키 포함 테스트)
-            const response = await fetch(url, {
-                method: "GET",
-                credentials: "include" 
-            });
-
-            console.log("[CHZZK 직접 API 테스트] HTTP 상태:", response.status);
-
-            if (!response.ok) {
-                throw new Error(`HTTP Error ${response.status}`);
-            }
-
+            const response = await fetch(`/api/public-channel?channelId=${encodeURIComponent(inputId)}`);
             const data = await response.json();
-            console.log("[CHZZK 직접 API 테스트] 응답:", data);
+
+            // 💡 3. 추가: HTTP 응답 성공 여부 및 API 내부 응답(channelId === null) 검증
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "채널 정보를 가져오지 못했습니다.");
+            }
             
-            // 💡 API 내부 응답(channelId === null) 검증 (직접 호출 응답 구조인 data.content 반영)
-            if (!data.content || data.content.channelId === null) {
+            if (data.channelId === null || (data.content && data.content.channelId === null)) {
                 throw new Error("올바른 채널 ID를 입력해주세요");
             }
 
             monitoringMode = "public";
-            currentChannelId = data.content.channelId;
+            currentChannelId = data.channelId;
 
             logoutButton.textContent = "뒤로가기"; 
 
-            channelName.textContent = data.content.channelName || "-";
-            channelId.textContent = data.content.channelId || "-";
-            setProfileImage(profileImage, data.content.channelImageUrl);
+            channelName.textContent = data.channelName || "-";
+            channelId.textContent = data.channelId || "-";
+            setProfileImage(profileImage, data.channelImageUrl);
             
             displayedFollowerCount = 0;
-            updateFollowerCount(data.content.followerCount || 0);
+            updateFollowerCount(data.followerCount || 0);
 
             loadingSection.classList.add("hidden");
             userSection.classList.remove("hidden");
@@ -192,21 +180,15 @@ if (guestButton) {
             startMonitoring();
 
         } catch (error) {
-            console.error("[CHZZK 직접 API 테스트] 요청 실패:", error);
-            
+            console.error(error);
             loadingSection.classList.add("hidden");
             loginSection.classList.remove("hidden");
 
             guestChannelIdInput.classList.add("error");
             guestButton.classList.add("shake");
-            
             if (guestInputError) {
-                // 💡 CORS 차단 시 특별한 에러 메시지 표시, 그 외에는 기존 에러 로직 유지
-                if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
-                    guestInputError.textContent = "CHZZK 브라우저 세션을 이용한 직접 조회가 차단되었습니다. (CORS)";
-                } else {
-                    guestInputError.textContent = error.message === "올바른 채널 ID를 입력해주세요" ? error.message : "올바른 채널 ID를 입력해주세요";
-                }
+                // 💡 응답 검증에서 발생한 에러면 그대로 표시, 아니면 기본 에러
+                guestInputError.textContent = error.message === "올바른 채널 ID를 입력해주세요" ? error.message : "올바른 채널 ID를 입력해주세요";
                 guestInputError.classList.remove("hidden");
             }
         }
