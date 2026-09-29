@@ -1183,33 +1183,40 @@ function formatActivityTime(date) {
 
 async function initialize() {
 
+    /*
+     * 1. 최초 접속 처리 (자동 로그인 방지)
+     */
     if (!sessionStorage.getItem("chzzk_init_done")) {
 
         sessionStorage.setItem("chzzk_init_done", "true");
-        
-        /*
-         * HttpOnly 쿠키는 자바스크립트로 지울 수 없으므로 
-         * document.cookie 강제 만료 코드는 제거하고
-         * 서버의 /api/logout을 호출하여 세션을 파기합니다.
-         */
-        try {
-            await fetch("/api/logout", { method: "POST" });
-        } catch (e) {
-            // 무시
-        }
 
         /*
-         * 💡 페이지 최초 진입 시, 이미 세션을 초기화했으므로
-         * 불필요한 loadUser() 호출을 생략하고 
-         * 곧바로 로그인 화면을 표시한 뒤 함수를 종료합니다.
+         * 💡 핵심 수정 1: UI 즉시 전환
+         * await 없이 UI부터 즉시 변경하여 로딩 화면이 깜빡이는 것을 원천 차단합니다.
          */
         loadingSection.classList.add("hidden");
         loginSection.classList.remove("hidden");
         userSection.classList.add("hidden");
 
+        /*
+         * 💡 핵심 수정 2: 무의미한 document.cookie 삭제 코드를 빼고
+         * 기존 서버 API를 활용하되, await를 빼서 백그라운드에서 조용히 처리하게 합니다.
+         */
+        fetch("/api/logout", { method: "POST" }).catch(() => {});
+
         return;
 
     }
+
+
+    /*
+     * 2. OAuth 복귀 또는 새로고침 시
+     * index.html에서 로딩 화면을 기본 hidden 처리했으므로
+     * /api/me를 찌르기 전에 명시적으로 로딩 화면을 켜줍니다.
+     */
+    loadingSection.classList.remove("hidden");
+    loginSection.classList.add("hidden");
+    userSection.classList.add("hidden");
 
 
     const loggedIn =
