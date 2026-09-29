@@ -17,7 +17,7 @@
     <main class="container">
 
         <!-- ========================================= -->
-        <!-- 로딩 화면 -->
+        <!-- 1. 로딩 화면 -->
         <!-- ========================================= -->
         <section id="loading-section" class="login-page">
             <div class="login-card">
@@ -29,13 +29,13 @@
 
 
         <!-- ========================================= -->
-        <!-- 로그인 화면 (화이트 테마 + 치지직 포인트) -->
+        <!-- 2. 로그인 화면 (화이트 테마 + 치지직 포인트) -->
         <!-- ========================================= -->
         <section id="login-section" class="login-page hidden">
             <div class="login-card">
                 
                 <div class="logo">
-                    <!-- 치지직 심볼 느낌의 아이콘 -->
+                    <!-- 치지직 심볼 아이콘 -->
                     <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
                         <path d="M4 4l6.5 16h3L20 4h-3.5L12 15 7.5 4H4z"/>
                     </svg>
@@ -46,7 +46,7 @@
 
                 <div class="login-options">
                     
-                    <!-- 1. 치지직 공식 로그인 (목록 포함) -->
+                    <!-- 치지직 공식 로그인 -->
                     <div class="login-group">
                         <p class="button-description">누가 팔로우했는지 실시간 활동 내역까지 보려면</p>
                         <button id="login-button" class="chzzk-button primary">
@@ -58,7 +58,7 @@
                         <span>또는</span>
                     </div>
 
-                    <!-- 2. 비로그인 모드 (카운터 전용) -->
+                    <!-- 비로그인 모드 (카운터 전용) -->
                     <div class="login-group">
                         <p class="button-description">로그인 없이 특정 채널의 롤링 카운터만 보려면</p>
                         <div class="guest-input-group">
@@ -81,16 +81,16 @@
 
 
         <!-- ========================================= -->
-        <!-- 메인 대시보드 -->
+        <!-- 3. 메인 대시보드 화면 -->
         <!-- ========================================= -->
         <section id="user-section" class="dashboard hidden">
             
-            <!-- 상단 헤더 (로그아웃 버튼) -->
+            <!-- 상단 헤더 -->
             <header class="top-header minimal-header">
-                <button id="logout-button" class="logout-button">로그아웃</button>
+                <button id="logout-button" class="logout-button">로그아웃 또는 뒤로가기</button>
             </header>
 
-            <!-- 1. 중앙 프로필 & 메인 카운터 카드 -->
+            <!-- 중앙 프로필 & 메인 카운터 카드 -->
             <section class="hero-card">
                 <div class="hero-profile">
                     <img id="profile-image" alt="프로필 이미지">
@@ -109,8 +109,8 @@
                 <span id="monitor-status-text">팔로워 변화를 확인하는 중...</span>
             </section>
 
-            <!-- 2. 실시간 활동 내역 (내부 스크롤) -->
-            <section class="activity-card">
+            <!-- 실시간 활동 내역 -->
+            <section class="activity-card" id="activity-section">
                 <div class="activity-header">
                     <div>
                         <h2>실시간 활동</h2>
@@ -119,7 +119,7 @@
                     <span id="activity-count" class="activity-count">0</span>
                 </div>
 
-                <!-- 💡 목록 박스 내부 스크롤 컨테이너 -->
+                <!-- 내부 스크롤 목록 -->
                 <div id="activity-list" class="activity-list">
                     <div id="empty-activity" class="empty-activity">
                         아직 확인된 팔로워 활동이 없습니다.
@@ -128,6 +128,7 @@
             </section>
 
         </section>
+
     </main>
 
     <script src="/script.js"></script>
