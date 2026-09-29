@@ -96,15 +96,40 @@ loginButton.addEventListener("click", () => {
 /* ========================================= */
 /* 비로그인으로 조회 */
 /* ========================================= */
+// 💡 추가: 오류 메시지용 DOM
+const guestInputError = document.getElementById("guest-input-error");
+
+// 💡 추가: 사용자가 입력을 다시 시작하면 오류 상태를 즉시 제거
+if (guestChannelIdInput) {
+    guestChannelIdInput.addEventListener("input", () => {
+        guestChannelIdInput.classList.remove("error");
+        guestButton.classList.remove("shake");
+        if (guestInputError) {
+            guestInputError.classList.add("hidden");
+            guestInputError.textContent = "";
+        }
+    });
+}
+
 if (guestButton) {
     guestButton.addEventListener("click", async () => {
         const inputId = guestChannelIdInput.value.trim();
+
+        // 💡 추가: 버튼 애니메이션을 다시 실행하기 위한 리셋
+        guestButton.classList.remove("shake");
+        void guestButton.offsetWidth; 
+
         if (!inputId) {
-            alert("채널 ID를 입력해주세요.");
+            // 💡 alert 대체: 빈 값일 때 인라인 오류 표시
+            guestChannelIdInput.classList.add("error");
+            guestButton.classList.add("shake");
+            if (guestInputError) {
+                guestInputError.textContent = "채널 ID를 입력해주세요";
+                guestInputError.classList.remove("hidden");
+            }
             return;
         }
 
-        // 💡 [수정됨] 비로그인 조회 시 전용 문구로 변경
         if (loadingText) {
             loadingText.textContent = "채널 정보를 확인하고 있습니다.";
         }
@@ -140,9 +165,16 @@ if (guestButton) {
 
         } catch (error) {
             console.error(error);
-            alert(error.message);
+            // 💡 alert 대체: API 호출 실패(잘못된 채널 ID) 시 인라인 오류 표시
             loadingSection.classList.add("hidden");
             loginSection.classList.remove("hidden");
+
+            guestChannelIdInput.classList.add("error");
+            guestButton.classList.add("shake");
+            if (guestInputError) {
+                guestInputError.textContent = "올바른 채널 ID를 입력해주세요";
+                guestInputError.classList.remove("hidden");
+            }
         }
     });
 }
