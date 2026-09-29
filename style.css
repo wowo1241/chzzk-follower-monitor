@@ -42,24 +42,19 @@ button {
     width: 100%;
     max-width: 420px;
     padding: 50px 40px;
-    background: #ffffff; /* 깔끔한 화이트 유지 */
+    background: #ffffff;
     border-radius: 24px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
     text-align: center;
 }
 
-.logo {
-    width: 64px;
-    height: 64px;
+/* 💡 [수정됨] 새 아이콘 클래스 추가 */
+.login-icon {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    display: block;
     margin: 0 auto 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 18px;
-    
-    /* 💡 로고: 치지직 다크 배경에 네온그린 포인트 */
-    background: #141517; 
-    color: #00c73c;
 }
 
 .login-card h1 {
@@ -76,11 +71,11 @@ button {
     line-height: 1.5;
 }
 
-/* 버튼 상단 설명 텍스트 */
+/* 💡 [수정됨] 버튼 상단 설명 텍스트 간격 조정 */
 .button-description {
-    font-size: 12px;
-    color: #888;
-    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 12px 0;
     font-weight: 600;
 }
 
@@ -107,17 +102,17 @@ button {
     transform: scale(0.97);
 }
 
-/* 💡 공식 로그인 버튼 (치지직 네온그린 + 블랙 텍스트) */
+/* 💡 [수정됨] 공식 로그인 버튼 (대시보드와 동일한 #00c73c 적용) */
 .chzzk-button.primary {
     width: 100%;
     padding: 16px;
     background: #00c73c;
-    color: #111; 
-    box-shadow: 0 4px 15px rgba(0, 255, 163, 0.2);
+    color: #ffffff; 
+    box-shadow: 0 4px 15px rgba(0, 199, 60, 0.2);
 }
 .chzzk-button.primary:hover {
     background: #00a832;
-    box-shadow: 0 6px 20px rgba(0, 255, 163, 0.3);
+    box-shadow: 0 6px 20px rgba(0, 199, 60, 0.3);
 }
 
 /* 구분선 */
@@ -133,7 +128,7 @@ button {
     left: 0;
     right: 0;
     height: 1px;
-    background: #eaeaea; /* 깔끔한 연한 회색 선 */
+    background: #eaeaea; 
 }
 .login-divider span {
     position: relative;
@@ -161,7 +156,7 @@ button {
     transition: border-color 0.2s;
     outline: none;
 }
-/* 입력창 클릭 시 치지직 네온 테두리 */
+/* 💡 [수정됨] 포커스 시 대시보드와 동일한 #00c73c 적용 */
 .chzzk-input:focus {
     border-color: #00c73c;
     background: #ffffff;
@@ -170,14 +165,14 @@ button {
     color: #aaa;
 }
 
-/* 💡 비로그인 조회 버튼 (다크 그레이 + 네온그린 텍스트) */
+/* 💡 [수정됨] 비로그인 조회 버튼 (대시보드와 동일한 #00c73c 적용) */
 .chzzk-button.secondary {
     padding: 0 24px;
-    background: #141517; 
-    color: #00c73c; 
+    background: #00c73c; 
+    color: #ffffff; 
 }
 .chzzk-button.secondary:hover {
-    background: #2a2b2e;
+    background: #00a832;
 }
 
 .chzzk-button:hover { opacity: 0.9; }
@@ -200,7 +195,7 @@ button {
 /* ========================================= */
 .dashboard {
     width: 100%;
-    max-width: 800px; /* 대시보드 폭을 살짝 넓힘 */
+    max-width: 800px;
     margin: 0 auto;
 }
 
@@ -228,7 +223,7 @@ button {
 }
 
 /* ========================================= */
-/* 메인 히어로 카드 (녹스인플루언서 스타일) */
+/* 메인 히어로 카드 */
 /* ========================================= */
 .hero-card {
     padding: 30px 40px 40px;
@@ -276,7 +271,6 @@ button {
     margin-bottom: 10px;
 }
 
-/* 💡 거대한 카운터 폰트 */
 .follower-count {
     width: 100%;
     display: flex;
@@ -369,13 +363,12 @@ button {
 }
 
 .activity-list {
-    max-height: 395px; 
+    max-height: 158px; 
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
 }
 
-/* 커스텀 스크롤바 (Webkit 브라우저용) */
 .activity-list::-webkit-scrollbar {
     width: 6px;
 }
@@ -467,18 +460,6 @@ button {
 }
 
 /* ========================================= */
-/* 하단 푸터 */
-/* ========================================= */
-.footer {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 0 30px;
-    color: #aaa;
-    font-size: 12px;
-}
-
-/* ========================================= */
 /* 모바일 반응형 */
 /* ========================================= */
 @media (max-width: 600px) {
@@ -489,7 +470,7 @@ button {
         padding: 25px 20px 30px;
     }
     .hero-profile img {
-        width: 65px; /* 모바일 프로필 크기 */
+        width: 65px; 
         height: 65px;
     }
     .hero-channel-name {
@@ -503,10 +484,10 @@ button {
         padding: 20px;
     }
     .activity-item {
-        padding: 14px 20px; /* 모바일 아이템 1개 높이 약 75px */
+        padding: 14px 20px; 
     }
     .activity-list {
-        max-height: 375px; /* 모바일 아이템 높이(75px) * 5개 */
+        max-height: 150px; 
     }
 }
 
