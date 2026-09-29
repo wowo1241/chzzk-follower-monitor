@@ -5,7 +5,9 @@ const userSection = document.getElementById("user-section");
 const loginButton = document.getElementById("login-button");
 const logoutButton = document.getElementById("logout-button");
 
-// 💡 [새로 추가된 DOM] 비로그인 요소
+// 💡 [수정됨] 로딩 텍스트 제어를 위한 DOM 추가
+const loadingText = document.getElementById("loading-text");
+
 const guestChannelIdInput = document.getElementById("guest-channel-id");
 const guestButton = document.getElementById("guest-button");
 const activitySection = document.querySelector(".activity-card"); // 활동 목록 박스
@@ -43,7 +45,6 @@ let monitoring = false;
 
 let currentChannelId = null;
 
-// 💡 [상태 변수] "login" 또는 "public"
 let monitoringMode = null; 
 
 /*
@@ -93,7 +94,7 @@ loginButton.addEventListener("click", () => {
 });
 
 /* ========================================= */
-/* 💡 [새로 추가] 비로그인으로 조회 */
+/* 비로그인으로 조회 */
 /* ========================================= */
 if (guestButton) {
     guestButton.addEventListener("click", async () => {
@@ -101,6 +102,11 @@ if (guestButton) {
         if (!inputId) {
             alert("채널 ID를 입력해주세요.");
             return;
+        }
+
+        // 💡 [수정됨] 비로그인 조회 시 전용 문구로 변경
+        if (loadingText) {
+            loadingText.textContent = "채널 정보를 확인하고 있습니다.";
         }
 
         loadingSection.classList.remove("hidden");
@@ -114,14 +120,11 @@ if (guestButton) {
                 throw new Error(data.error || "채널 정보를 가져오지 못했습니다.");
             }
 
-            // 상태 변경
             monitoringMode = "public";
             currentChannelId = data.channelId;
 
-            // 💡 [수정됨] 비로그인 시 버튼 텍스트 변경
             logoutButton.textContent = "뒤로가기"; 
 
-            // UI 렌더링
             channelName.textContent = data.channelName || "-";
             channelId.textContent = data.channelId || "-";
             setProfileImage(profileImage, data.channelImageUrl);
@@ -129,12 +132,10 @@ if (guestButton) {
             displayedFollowerCount = 0;
             updateFollowerCount(data.followerCount || 0);
 
-            // 화면 전환
             loadingSection.classList.add("hidden");
             userSection.classList.remove("hidden");
             if (activitySection) activitySection.classList.add("hidden"); 
 
-            // 모니터링 시작
             startMonitoring();
 
         } catch (error) {
@@ -160,7 +161,6 @@ logoutButton.addEventListener("click", async () => {
     monitorStatusText.textContent =
         "종료하는 중...";
 
-    // 💡 비로그인 모드일 경우 API 로그아웃 생략하고 화면만 초기화
     if (monitoringMode === "public") {
         monitoringMode = null;
         currentChannelId = null;
@@ -176,6 +176,12 @@ logoutButton.addEventListener("click", async () => {
         userSection.classList.add("hidden");
         loginSection.classList.remove("hidden");
         logoutButton.disabled = false;
+
+        // 💡 [수정됨] 기존 문구로 초기화 복구
+        if (loadingText) {
+            loadingText.textContent = "로그인 상태를 확인하고 있습니다.";
+        }
+
         return;
     }
 
@@ -242,6 +248,11 @@ logoutButton.addEventListener("click", async () => {
         monitorStatusText.textContent =
             "로그아웃되었습니다.";
 
+        // 💡 [수정됨] 기존 문구로 초기화 복구
+        if (loadingText) {
+            loadingText.textContent = "로그인 상태를 확인하고 있습니다.";
+        }
+
     } catch (error) {
 
         console.error(error);
@@ -282,10 +293,8 @@ async function loadUser() {
         loginSection.classList.add("hidden");
         userSection.classList.remove("hidden");
         
-        // 💡 [추가] 로그인 모드로 명시
         monitoringMode = "login";
         
-        // 💡 [수정됨] 로그인 시 버튼 텍스트 원상복구
         logoutButton.textContent = "로그아웃"; 
         
         if (activitySection) activitySection.classList.remove("hidden"); 
