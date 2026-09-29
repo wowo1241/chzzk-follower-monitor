@@ -1183,6 +1183,22 @@ function formatActivityTime(date) {
 
 async function initialize() {
 
+    // 💡 [수정사항 3 적용] 페이지 최초 진입 시에만 실행되는 세션 초기화 (자동 로그인 방지)
+    if (!sessionStorage.getItem("chzzk_init_done")) {
+        sessionStorage.setItem("chzzk_init_done", "true");
+        
+        // 프론트엔드 쿠키 강제 만료
+        document.cookie = "chzzk_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        
+        // 백엔드 세션 삭제 요청
+        try {
+            await fetch("/api/logout", { method: "POST" });
+        } catch (e) {
+            // 무시
+        }
+    }
+
+
     const loggedIn =
         await loadUser();
 
