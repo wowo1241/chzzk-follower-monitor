@@ -1077,8 +1077,8 @@ async function startMonitoring() {
 /* ========================================= */
 async function pollFollowers() {
     if (pollingInProgress) return;
-    
-    // 💡 추가: 로그아웃 상태이거나 모드가 설정되지 않았다면 폴링 즉시 중단 (401 오류 방지)
+
+    // 💡 로그아웃 상태이거나 모드가 없으면 폴링 즉시 중단 (401 방지)
     if (monitoringMode !== "public" && monitoringMode !== "login") return;
 
     pollingInProgress = true;
