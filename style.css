@@ -10,7 +10,7 @@ html, body {
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
-    background: #f4f6f8; /* 눈이 편안한 밝은 배경 */
+    background: #f4f6f8;
     color: #222;
 }
 
@@ -29,7 +29,7 @@ button {
 }
 
 /* ========================================= */
-/* 로그인 & 로딩 화면 (화이트 테마 기반) */
+/* 로그인 & 로딩 화면 */
 /* ========================================= */
 .login-page {
     min-height: calc(100vh - 80px);
@@ -285,7 +285,7 @@ button {
     font-size: 13px;
 }
 
-/* 💡 [수정됨] 새롭게 추가된 안내문구 CSS (작고 연하게) */
+/* 💡 [수정사항 2 적용] 새롭게 추가된 지연 안내문구 CSS */
 .api-disclaimer {
     margin-top: 8px;
     color: #999;
