@@ -43,7 +43,7 @@ let monitoring = false;
 
 let currentChannelId = null;
 
-// 💡 [새로 추가된 상태 변수] "login" 또는 "public"
+// 💡 [상태 변수] "login" 또는 "public"
 let monitoringMode = null; 
 
 /*
@@ -53,10 +53,6 @@ let previousFollowers = new Map();
 
 /*
  * 최초 목록을 이미 저장했는지 여부
- *
- * 기존 코드에서는 previousFollowers.size === 0
- * 을 최초 조회 여부로 사용했기 때문에
- * 팔로워가 0명인 경우 문제가 생길 수 있었다.
  */
 let hasInitialSnapshot = false;
 
@@ -122,6 +118,9 @@ if (guestButton) {
             monitoringMode = "public";
             currentChannelId = data.channelId;
 
+            // 💡 [수정됨] 비로그인 시 버튼 텍스트 변경
+            logoutButton.textContent = "뒤로가기"; 
+
             // UI 렌더링
             channelName.textContent = data.channelName || "-";
             channelId.textContent = data.channelId || "-";
@@ -133,7 +132,7 @@ if (guestButton) {
             // 화면 전환
             loadingSection.classList.add("hidden");
             userSection.classList.remove("hidden");
-            if (activitySection) activitySection.classList.add("hidden"); // 비로그인 시 활동 목록 숨김
+            if (activitySection) activitySection.classList.add("hidden"); 
 
             // 모니터링 시작
             startMonitoring();
@@ -149,7 +148,7 @@ if (guestButton) {
 
 
 /* ========================================= */
-/* 로그아웃 */
+/* 로그아웃 및 뒤로가기 */
 /* ========================================= */
 
 logoutButton.addEventListener("click", async () => {
@@ -159,9 +158,9 @@ logoutButton.addEventListener("click", async () => {
     stopMonitoring();
 
     monitorStatusText.textContent =
-        "로그아웃하는 중...";
+        "종료하는 중...";
 
-    // 💡 [새로 추가] 비로그인 모드일 경우 API 로그아웃 생략하고 화면만 초기화
+    // 💡 비로그인 모드일 경우 API 로그아웃 생략하고 화면만 초기화
     if (monitoringMode === "public") {
         monitoringMode = null;
         currentChannelId = null;
@@ -207,7 +206,7 @@ logoutButton.addEventListener("click", async () => {
         /*
          * 상태 초기화
          */
-        monitoringMode = null; // 상태 초기화 추가
+        monitoringMode = null; 
         currentChannelId = null;
 
         previousFollowers.clear();
@@ -271,7 +270,6 @@ async function loadUser() {
 
         if (!response.ok) {
             if (response.status === 401) {
-                // 💡 수정: 로그인 안 됨 -> 로딩 끄고 로그인 창 켜기
                 loadingSection.classList.add("hidden"); 
                 loginSection.classList.remove("hidden");
                 userSection.classList.add("hidden");
@@ -280,13 +278,16 @@ async function loadUser() {
             throw new Error(data.error || "사용자 정보를 가져오지 못했습니다.");
         }
 
-        // 💡 수정: 로그인 됨 -> 로딩 끄고 대시보드 켜기
         loadingSection.classList.add("hidden");
         loginSection.classList.add("hidden");
         userSection.classList.remove("hidden");
         
         // 💡 [추가] 로그인 모드로 명시
         monitoringMode = "login";
+        
+        // 💡 [수정됨] 로그인 시 버튼 텍스트 원상복구
+        logoutButton.textContent = "로그아웃"; 
+        
         if (activitySection) activitySection.classList.remove("hidden"); 
 
         currentChannelId = data.channelId || null;
@@ -295,7 +296,6 @@ async function loadUser() {
 
         setProfileImage(profileImage, data.channelImageUrl);
 
-        // 💡 수정: 0에서부터 실제 팔로워 수까지 촤라라락 올라가도록 실행
         displayedFollowerCount = 0;
         updateFollowerCount(data.followerCount || 0);
 
@@ -319,10 +319,6 @@ function animateFollowerCount(targetCount) {
     targetCount =
         Number(targetCount) || 0;
 
-    /*
-     * 이미 같은 숫자라면
-     * 애니메이션을 실행하지 않는다.
-     */
     if (
         displayedFollowerCount === targetCount
     ) {
@@ -335,9 +331,6 @@ function animateFollowerCount(targetCount) {
     }
 
 
-    /*
-     * 기존 애니메이션 취소
-     */
     if (counterAnimationFrame) {
 
         cancelAnimationFrame(
@@ -359,9 +352,6 @@ function animateFollowerCount(targetCount) {
         );
 
 
-    /*
-     * 변화량에 따라 애니메이션 속도 조절
-     */
     const duration =
         Math.min(
             900,
@@ -389,9 +379,6 @@ function animateFollowerCount(targetCount) {
             );
 
 
-        /*
-         * ease-out
-         */
         const eased =
             1 -
             Math.pow(
@@ -462,7 +449,6 @@ function updateFollowerCount(count) {
     const cleanNumber = String(count || 0).replace(/,/g, '');
     const targetNumber = Number(cleanNumber) || 0;
 
-    // 💡 값을 넣기만 하면 Odometer 라이브러리가 알아서 촤라라락 굴려줌
     followerCount.innerHTML = targetNumber;
 }
 
@@ -478,7 +464,6 @@ async function fetchFollowers() {
         throw new Error(data.error || `팔로워 정보를 가져오지 못했습니다. (HTTP ${response.status})`);
     }
 
-    // 💡 목록과 총 팔로워 수를 객체로 묶어서 반환
     return {
         followers: Array.isArray(data.followers) ? data.followers : [],
         totalCount: data.totalCount || 0
@@ -487,7 +472,7 @@ async function fetchFollowers() {
 
 
 /* ========================================= */
-/* 팔로워 목록을 Map으로 변환 (공식 API JSON 구조 반영) */
+/* 팔로워 목록을 Map으로 변환 */
 /* ========================================= */
 function makeFollowerMap(followers) {
     const map = new Map();
@@ -495,7 +480,6 @@ function makeFollowerMap(followers) {
     for (const follower of followers) {
         if (!follower) continue;
 
-        // 💡 중요: 공식 API 응답 구조(user.userIdHash)에 맞게 데이터 추출
         const id = follower.user?.userIdHash || follower.channelId;
         const name = follower.user?.nickname || follower.channelName || "알 수 없는 사용자";
 
@@ -518,14 +502,6 @@ function makeFollowerMap(followers) {
 
 function compareFollowers(currentFollowers) {
 
-    /*
-     * 최초 조회
-     *
-     * 기존 코드처럼 size === 0 을 사용하지 않는다.
-     *
-     * 팔로워가 0명이어도 최초 스냅샷으로
-     * 정확하게 기록된다.
-     */
     if (!hasInitialSnapshot) {
 
         previousFollowers =
@@ -537,10 +513,6 @@ function compareFollowers(currentFollowers) {
 
     }
 
-
-    /*
-     * 새로 생긴 팔로워
-     */
 
     for (
         const [id, follower]
@@ -556,10 +528,6 @@ function compareFollowers(currentFollowers) {
     }
 
 
-    /*
-     * 사라진 팔로워
-     */
-
     for (
         const [id, follower]
         of previousFollowers
@@ -573,10 +541,6 @@ function compareFollowers(currentFollowers) {
 
     }
 
-
-    /*
-     * 현재 상태를 다음 비교 기준으로 저장
-     */
 
     previousFollowers =
         currentFollowers;
@@ -595,19 +559,6 @@ function handleFollow(follower) {
         follower
     );
 
-
-    /*
-     * 중요:
-     *
-     * 기존에는 getProfileInfo()를
-     * await한 다음 활동을 표시했다.
-     *
-     * 그래서 프로필 API가 늦으면
-     * 팔로우 표시 자체가 늦어졌다.
-     *
-     * 이제는 팔로우를 감지하면
-     * 활동을 먼저 즉시 표시한다.
-     */
 
     const activity = {
         type: "follow",
@@ -633,9 +584,6 @@ function handleFollow(follower) {
     addActivity(activity);
 
 
-    /*
-     * 프로필 정보는 뒤에서 비동기로 가져온다.
-     */
     loadActivityProfile(activity);
 
 }
@@ -652,10 +600,6 @@ function handleUnfollow(follower) {
         follower
     );
 
-
-    /*
-     * 언팔로우도 즉시 표시
-     */
 
     const activity = {
         type: "unfollow",
@@ -681,9 +625,6 @@ function handleUnfollow(follower) {
     addActivity(activity);
 
 
-    /*
-     * 프로필 정보는 별도로 가져온다.
-     */
     loadActivityProfile(activity);
 
 }
@@ -708,11 +649,6 @@ async function loadActivityProfile(activity) {
             );
 
 
-        /*
-         * 프로필 정보를 받은 후
-         * 활동 데이터만 갱신한다.
-         */
-
         if (profile.channelName) {
 
             activity.channelName =
@@ -729,9 +665,6 @@ async function loadActivityProfile(activity) {
         }
 
 
-        /*
-         * 활동 목록을 다시 그린다.
-         */
         renderActivities();
 
     } catch (error) {
@@ -761,11 +694,6 @@ async function getProfileInfo(channelId) {
 
     }
 
-
-    /*
-     * 이미 가져온 유저라면
-     * 다시 요청하지 않는다.
-     */
 
     if (profileCache.has(channelId)) {
 
@@ -827,12 +755,6 @@ async function getProfileInfo(channelId) {
         );
 
 
-        /*
-         * 실패한 경우에도 캐시에 저장해서
-         * 매 polling마다 같은 유저에게
-         * 계속 요청하지 않도록 한다.
-         */
-
         const fallback = {
 
             channelName: null,
@@ -856,7 +778,7 @@ async function getProfileInfo(channelId) {
 
 
 /* ========================================= */
-/* 프로필 이미지 설정 (null 및 깜빡임 방지) */
+/* 프로필 이미지 설정 */
 /* ========================================= */
 function setProfileImage(imageElement, imageUrl) {
     if (!imageElement) return;
@@ -864,7 +786,6 @@ function setProfileImage(imageElement, imageUrl) {
     const defaultImage = "https://ssl.pstatic.net/cmstatic/nng/img/img_anonymous_square_gray_opacity2x.png";
     const finalImageUrl = imageUrl || defaultImage;
 
-    // 💡 핵심: 이미 같은 프로필 이미지가 박혀있다면 다시 씌우지 않음 (깜빡임 완벽 해결)
     if (imageElement.src === finalImageUrl) {
         return;
     }
@@ -890,10 +811,6 @@ function addActivity(activity) {
         activity
     );
 
-
-    /*
-     * 최근 100개만 유지
-     */
 
     if (activityItems.length > 100) {
 
@@ -956,7 +873,7 @@ function renderActivities() {
 
 
 /* ========================================= */
-/* 활동 항목 생성 (domNode 저장 추가) */
+/* 활동 항목 생성 */
 /* ========================================= */
 function createActivityElement(activity) {
     const item = document.createElement("div");
@@ -993,7 +910,6 @@ function createActivityElement(activity) {
     item.appendChild(image);
     item.appendChild(content);
 
-    // 💡 핵심: 나중에 이 요소만 부분 업데이트하기 위해 DOM 노드를 저장해둡니다.
     activity.domNode = item;
 
     return item;
@@ -1006,20 +922,17 @@ function addActivity(activity) {
     activityItems.unshift(activity);
 
     if (activityItems.length > 100) {
-        activityItems.pop(); // 오래된 데이터 삭제
+        activityItems.pop(); 
     }
 
     const item = createActivityElement(activity);
 
-    // '아직 확인된 활동이 없습니다' 메시지 제거
     if (activityList.contains(emptyActivity)) {
         activityList.innerHTML = ""; 
     }
 
-    // 💡 핵심: 전체를 다시 그리지 않고, 새 항목만 리스트 맨 위에 살짝 밀어넣음
     activityList.prepend(item);
 
-    // 화면에서도 100개가 넘어가면 제일 밑에 있는 항목 하나만 삭제
     if (activityList.children.length > 100) {
         activityList.lastElementChild.remove();
     }
@@ -1038,7 +951,6 @@ async function loadActivityProfile(activity) {
 
         if (profile.channelName) {
             activity.channelName = profile.channelName;
-            // 리스트 전체를 다시 그리지 않고, 저장해둔 DOM에서 이름만 교체
             if (activity.domNode) {
                 activity.domNode.querySelector('.activity-name').textContent = profile.channelName;
             }
@@ -1046,7 +958,6 @@ async function loadActivityProfile(activity) {
 
         if (profile.channelImageUrl) {
             activity.channelImageUrl = profile.channelImageUrl;
-            // 리스트 전체를 다시 그리지 않고, 저장해둔 DOM에서 이미지만 교체
             if (activity.domNode) {
                 setProfileImage(activity.domNode.querySelector('.activity-image'), profile.channelImageUrl);
             }
@@ -1071,9 +982,7 @@ async function startMonitoring() {
     monitorStatusText.textContent = "팔로워 목록을 불러오는 중...";
 
     try {
-        // 💡 [수정] 모드에 따라 분기 처리
         if (monitoringMode === "public") {
-            // 비로그인 모드는 이미 데이터를 한 번 세팅했으므로 타이머만 실행
             statusDot.classList.remove("loading");
             statusDot.classList.remove("error");
             monitorStatusText.textContent = "실시간 팔로워 감시 중 (조회 모드)";
@@ -1081,10 +990,8 @@ async function startMonitoring() {
             if (pollingTimer) clearInterval(pollingTimer);
             pollingTimer = setInterval(pollFollowers, POLLING_INTERVAL);
         } else {
-            // 💡 핵심: me.js 없이 이거 하나로 데이터 2개를 동시에 가져옴
             const { followers, totalCount } = await fetchFollowers();
 
-            // 가져온 카운트로 즉시 숫자 업데이트
             updateFollowerCount(totalCount);
 
             previousFollowers = makeFollowerMap(followers);
@@ -1116,9 +1023,7 @@ async function pollFollowers() {
     pollingInProgress = true;
 
     try {
-        // 💡 [수정] 모드에 따라 분기 처리
         if (monitoringMode === "public") {
-            // 비로그인: 비공식 API 호출 및 숫자만 갱신 (목록 생략)
             const response = await fetch(`/api/public-channel?channelId=${encodeURIComponent(currentChannelId)}`);
             const data = await response.json();
             
@@ -1126,14 +1031,12 @@ async function pollFollowers() {
                 updateFollowerCount(data.followerCount || 0);
             }
         } else {
-            // 로그인 모드: 기존 로직 그대로 유지
             const { followers, totalCount } = await fetchFollowers();
             updateFollowerCount(totalCount);
 
             const currentFollowers = makeFollowerMap(followers);
             compareFollowers(currentFollowers);
 
-            // 💡 추가: 5초마다 기존 항목들의 시간 텍스트를 최신화 ("방금 전" -> "1분 전" 등)
             updateActivityTimes();
         }
 
