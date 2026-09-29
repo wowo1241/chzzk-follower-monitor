@@ -115,16 +115,27 @@ if (guestButton) {
     guestButton.addEventListener("click", async () => {
         const inputId = guestChannelIdInput.value.trim();
 
-        // 💡 추가: 버튼 애니메이션을 다시 실행하기 위한 리셋
         guestButton.classList.remove("shake");
         void guestButton.offsetWidth; 
 
+        // 1. 빈 값 검증 (기존 로직 유지)
         if (!inputId) {
-            // 💡 alert 대체: 빈 값일 때 인라인 오류 표시
             guestChannelIdInput.classList.add("error");
             guestButton.classList.add("shake");
             if (guestInputError) {
                 guestInputError.textContent = "채널 ID를 입력해주세요";
+                guestInputError.classList.remove("hidden");
+            }
+            return;
+        }
+
+        // 💡 2. 추가: 32자리 16진수 형식 검사
+        const hexRegex = /^[0-9a-fA-F]{32}$/;
+        if (!hexRegex.test(inputId)) {
+            guestChannelIdInput.classList.add("error");
+            guestButton.classList.add("shake");
+            if (guestInputError) {
+                guestInputError.textContent = "올바른 채널 ID를 입력해주세요";
                 guestInputError.classList.remove("hidden");
             }
             return;
@@ -141,8 +152,13 @@ if (guestButton) {
             const response = await fetch(`/api/public-channel?channelId=${encodeURIComponent(inputId)}`);
             const data = await response.json();
 
+            // 💡 3. 추가: HTTP 응답 성공 여부 및 API 내부 응답(channelId === null) 검증
             if (!response.ok || !data.success) {
                 throw new Error(data.error || "채널 정보를 가져오지 못했습니다.");
+            }
+            
+            if (data.channelId === null || (data.content && data.content.channelId === null)) {
+                throw new Error("올바른 채널 ID를 입력해주세요");
             }
 
             monitoringMode = "public";
@@ -165,14 +181,14 @@ if (guestButton) {
 
         } catch (error) {
             console.error(error);
-            // 💡 alert 대체: API 호출 실패(잘못된 채널 ID) 시 인라인 오류 표시
             loadingSection.classList.add("hidden");
             loginSection.classList.remove("hidden");
 
             guestChannelIdInput.classList.add("error");
             guestButton.classList.add("shake");
             if (guestInputError) {
-                guestInputError.textContent = "올바른 채널 ID를 입력해주세요";
+                // 💡 응답 검증에서 발생한 에러면 그대로 표시, 아니면 기본 에러
+                guestInputError.textContent = error.message === "올바른 채널 ID를 입력해주세요" ? error.message : "올바른 채널 ID를 입력해주세요";
                 guestInputError.classList.remove("hidden");
             }
         }
