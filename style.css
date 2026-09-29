@@ -48,7 +48,6 @@ button {
     text-align: center;
 }
 
-/* 💡 [수정됨] 새 아이콘 클래스 추가 */
 .login-icon {
     width: 80px;
     height: 80px;
@@ -71,7 +70,6 @@ button {
     line-height: 1.5;
 }
 
-/* 💡 [수정됨] 버튼 상단 설명 텍스트 간격 조정 */
 .button-description {
     font-size: 13px;
     color: #666;
@@ -102,7 +100,6 @@ button {
     transform: scale(0.97);
 }
 
-/* 💡 [수정됨] 공식 로그인 버튼 (대시보드와 동일한 #00c73c 적용) */
 .chzzk-button.primary {
     width: 100%;
     padding: 16px;
@@ -156,7 +153,6 @@ button {
     transition: border-color 0.2s;
     outline: none;
 }
-/* 💡 [수정됨] 포커스 시 대시보드와 동일한 #00c73c 적용 */
 .chzzk-input:focus {
     border-color: #00c73c;
     background: #ffffff;
@@ -165,7 +161,6 @@ button {
     color: #aaa;
 }
 
-/* 💡 [수정됨] 비로그인 조회 버튼 (대시보드와 동일한 #00c73c 적용) */
 .chzzk-button.secondary {
     padding: 0 24px;
     background: #00c73c; 
@@ -288,6 +283,16 @@ button {
     margin-top: 25px;
     color: #aaa;
     font-size: 13px;
+}
+
+/* 💡 [수정됨] 새롭게 추가된 안내문구 CSS (작고 연하게) */
+.api-disclaimer {
+    margin-top: 8px;
+    color: #999;
+    font-size: 11px;
+    line-height: 1.4;
+    word-break: keep-all;
+    padding: 0 10px;
 }
 
 /* ========================================= */
