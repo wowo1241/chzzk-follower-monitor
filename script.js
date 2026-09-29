@@ -1183,19 +1183,32 @@ function formatActivityTime(date) {
 
 async function initialize() {
 
-    // 💡 [수정사항 3 적용] 페이지 최초 진입 시에만 실행되는 세션 초기화 (자동 로그인 방지)
     if (!sessionStorage.getItem("chzzk_init_done")) {
+
         sessionStorage.setItem("chzzk_init_done", "true");
         
-        // 프론트엔드 쿠키 강제 만료
-        document.cookie = "chzzk_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        
-        // 백엔드 세션 삭제 요청
+        /*
+         * HttpOnly 쿠키는 자바스크립트로 지울 수 없으므로 
+         * document.cookie 강제 만료 코드는 제거하고
+         * 서버의 /api/logout을 호출하여 세션을 파기합니다.
+         */
         try {
             await fetch("/api/logout", { method: "POST" });
         } catch (e) {
             // 무시
         }
+
+        /*
+         * 💡 페이지 최초 진입 시, 이미 세션을 초기화했으므로
+         * 불필요한 loadUser() 호출을 생략하고 
+         * 곧바로 로그인 화면을 표시한 뒤 함수를 종료합니다.
+         */
+        loadingSection.classList.add("hidden");
+        loginSection.classList.remove("hidden");
+        userSection.classList.add("hidden");
+
+        return;
+
     }
 
 
