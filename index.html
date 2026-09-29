@@ -1,4 +1,34 @@
-<!-- ========================================= -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    
+    <title>CHZZK Follower Monitor</title>
+    <link rel="stylesheet" href="/style.css">
+    
+    <!-- 롤링 카운터 라이브러리 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/odometer.js/0.4.8/themes/odometer-theme-default.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/odometer.js/0.4.8/odometer.min.js"></script>
+</head>
+
+<body>
+    <main class="container">
+
+        <!-- ========================================= -->
+        <!-- 로딩 화면 -->
+        <!-- ========================================= -->
+        <section id="loading-section" class="login-page">
+            <div class="login-card">
+                <div class="spinner"></div>
+                <h1>로딩 중...</h1>
+                <p class="login-description">로그인 상태를 확인하고 있습니다.</p>
+            </div>
+        </section>
+
+
+        <!-- ========================================= -->
         <!-- 로그인 화면 (화이트 테마 + 치지직 포인트) -->
         <!-- ========================================= -->
         <section id="login-section" class="login-page hidden">
@@ -48,3 +78,58 @@
 
             </div>
         </section>
+
+
+        <!-- ========================================= -->
+        <!-- 메인 대시보드 -->
+        <!-- ========================================= -->
+        <section id="user-section" class="dashboard hidden">
+            
+            <!-- 상단 헤더 (로그아웃 버튼) -->
+            <header class="top-header minimal-header">
+                <button id="logout-button" class="logout-button">로그아웃</button>
+            </header>
+
+            <!-- 1. 중앙 프로필 & 메인 카운터 카드 -->
+            <section class="hero-card">
+                <div class="hero-profile">
+                    <img id="profile-image" alt="프로필 이미지">
+                    <div id="channel-name" class="hero-channel-name">-</div>
+                    <div id="channel-id" class="hero-channel-id">-</div>
+                </div>
+
+                <div class="follower-title">REAL-TIME FOLLOWERS</div>
+                <div id="follower-count" class="follower-count odometer">0</div>
+                <div id="last-updated" class="last-updated">업데이트 확인 중...</div>
+            </section>
+
+            <!-- 상태 모니터링 -->
+            <section class="monitor-status">
+                <span id="status-dot" class="status-dot"></span>
+                <span id="monitor-status-text">팔로워 변화를 확인하는 중...</span>
+            </section>
+
+            <!-- 2. 실시간 활동 내역 (내부 스크롤) -->
+            <section class="activity-card">
+                <div class="activity-header">
+                    <div>
+                        <h2>실시간 활동</h2>
+                        <p>최근 팔로우 및 언팔로우 내역</p>
+                    </div>
+                    <span id="activity-count" class="activity-count">0</span>
+                </div>
+
+                <!-- 💡 목록 박스 내부 스크롤 컨테이너 -->
+                <div id="activity-list" class="activity-list">
+                    <div id="empty-activity" class="empty-activity">
+                        아직 확인된 팔로워 활동이 없습니다.
+                    </div>
+                </div>
+            </section>
+
+        </section>
+    </main>
+
+    <script src="/script.js"></script>
+</body>
+</html>
