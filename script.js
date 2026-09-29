@@ -5,6 +5,11 @@ const userSection = document.getElementById("user-section");
 const loginButton = document.getElementById("login-button");
 const logoutButton = document.getElementById("logout-button");
 
+// 💡 [새로 추가된 DOM] 비로그인 요소
+const guestChannelIdInput = document.getElementById("guest-channel-id");
+const guestButton = document.getElementById("guest-button");
+const activitySection = document.querySelector(".activity-card"); // 활동 목록 박스
+
 const profileImage = document.getElementById("profile-image");
 const channelName = document.getElementById("channel-name");
 const channelId = document.getElementById("channel-id");
@@ -37,6 +42,9 @@ let pollingTimer = null;
 let monitoring = false;
 
 let currentChannelId = null;
+
+// 💡 [새로 추가된 상태 변수] "login" 또는 "public"
+let monitoringMode = null; 
 
 /*
  * 이전 팔로워 목록
@@ -88,6 +96,57 @@ loginButton.addEventListener("click", () => {
 
 });
 
+/* ========================================= */
+/* 💡 [새로 추가] 비로그인으로 조회 */
+/* ========================================= */
+if (guestButton) {
+    guestButton.addEventListener("click", async () => {
+        const inputId = guestChannelIdInput.value.trim();
+        if (!inputId) {
+            alert("채널 ID를 입력해주세요.");
+            return;
+        }
+
+        loadingSection.classList.remove("hidden");
+        loginSection.classList.add("hidden");
+
+        try {
+            const response = await fetch(`/api/public-channel?channelId=${encodeURIComponent(inputId)}`);
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || "채널 정보를 가져오지 못했습니다.");
+            }
+
+            // 상태 변경
+            monitoringMode = "public";
+            currentChannelId = data.channelId;
+
+            // UI 렌더링
+            channelName.textContent = data.channelName || "-";
+            channelId.textContent = data.channelId || "-";
+            setProfileImage(profileImage, data.channelImageUrl);
+            
+            displayedFollowerCount = 0;
+            updateFollowerCount(data.followerCount || 0);
+
+            // 화면 전환
+            loadingSection.classList.add("hidden");
+            userSection.classList.remove("hidden");
+            if (activitySection) activitySection.classList.add("hidden"); // 비로그인 시 활동 목록 숨김
+
+            // 모니터링 시작
+            startMonitoring();
+
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+            loadingSection.classList.add("hidden");
+            loginSection.classList.remove("hidden");
+        }
+    });
+}
+
 
 /* ========================================= */
 /* 로그아웃 */
@@ -101,6 +160,25 @@ logoutButton.addEventListener("click", async () => {
 
     monitorStatusText.textContent =
         "로그아웃하는 중...";
+
+    // 💡 [새로 추가] 비로그인 모드일 경우 API 로그아웃 생략하고 화면만 초기화
+    if (monitoringMode === "public") {
+        monitoringMode = null;
+        currentChannelId = null;
+        guestChannelIdInput.value = "";
+        displayedFollowerCount = 0;
+        followerCount.textContent = "0";
+        channelName.textContent = "-";
+        channelId.textContent = "-";
+        profileImage.removeAttribute("src");
+        
+        if (activitySection) activitySection.classList.remove("hidden");
+        
+        userSection.classList.add("hidden");
+        loginSection.classList.remove("hidden");
+        logoutButton.disabled = false;
+        return;
+    }
 
     try {
 
@@ -129,6 +207,7 @@ logoutButton.addEventListener("click", async () => {
         /*
          * 상태 초기화
          */
+        monitoringMode = null; // 상태 초기화 추가
         currentChannelId = null;
 
         previousFollowers.clear();
@@ -205,6 +284,10 @@ async function loadUser() {
         loadingSection.classList.add("hidden");
         loginSection.classList.add("hidden");
         userSection.classList.remove("hidden");
+        
+        // 💡 [추가] 로그인 모드로 명시
+        monitoringMode = "login";
+        if (activitySection) activitySection.classList.remove("hidden"); 
 
         currentChannelId = data.channelId || null;
         channelName.textContent = data.channelName || "-";
@@ -988,21 +1071,32 @@ async function startMonitoring() {
     monitorStatusText.textContent = "팔로워 목록을 불러오는 중...";
 
     try {
-        // 💡 핵심: me.js 없이 이거 하나로 데이터 2개를 동시에 가져옴
-        const { followers, totalCount } = await fetchFollowers();
+        // 💡 [수정] 모드에 따라 분기 처리
+        if (monitoringMode === "public") {
+            // 비로그인 모드는 이미 데이터를 한 번 세팅했으므로 타이머만 실행
+            statusDot.classList.remove("loading");
+            statusDot.classList.remove("error");
+            monitorStatusText.textContent = "실시간 팔로워 감시 중 (조회 모드)";
 
-        // 가져온 카운트로 즉시 숫자 업데이트
-        updateFollowerCount(totalCount);
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(pollFollowers, POLLING_INTERVAL);
+        } else {
+            // 💡 핵심: me.js 없이 이거 하나로 데이터 2개를 동시에 가져옴
+            const { followers, totalCount } = await fetchFollowers();
 
-        previousFollowers = makeFollowerMap(followers);
-        hasInitialSnapshot = true;
+            // 가져온 카운트로 즉시 숫자 업데이트
+            updateFollowerCount(totalCount);
 
-        statusDot.classList.remove("loading");
-        statusDot.classList.remove("error");
-        monitorStatusText.textContent = "실시간 팔로워 감시 중";
+            previousFollowers = makeFollowerMap(followers);
+            hasInitialSnapshot = true;
 
-        if (pollingTimer) clearInterval(pollingTimer);
-        pollingTimer = setInterval(pollFollowers, POLLING_INTERVAL);
+            statusDot.classList.remove("loading");
+            statusDot.classList.remove("error");
+            monitorStatusText.textContent = "실시간 팔로워 감시 중";
+
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(pollFollowers, POLLING_INTERVAL);
+        }
 
     } catch (error) {
         console.error("Monitoring start error:", error);
@@ -1022,17 +1116,29 @@ async function pollFollowers() {
     pollingInProgress = true;
 
     try {
-        const { followers, totalCount } = await fetchFollowers();
-        updateFollowerCount(totalCount);
+        // 💡 [수정] 모드에 따라 분기 처리
+        if (monitoringMode === "public") {
+            // 비로그인: 비공식 API 호출 및 숫자만 갱신 (목록 생략)
+            const response = await fetch(`/api/public-channel?channelId=${encodeURIComponent(currentChannelId)}`);
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                updateFollowerCount(data.followerCount || 0);
+            }
+        } else {
+            // 로그인 모드: 기존 로직 그대로 유지
+            const { followers, totalCount } = await fetchFollowers();
+            updateFollowerCount(totalCount);
 
-        const currentFollowers = makeFollowerMap(followers);
-        compareFollowers(currentFollowers);
+            const currentFollowers = makeFollowerMap(followers);
+            compareFollowers(currentFollowers);
 
-        // 💡 추가: 5초마다 기존 항목들의 시간 텍스트를 최신화 ("방금 전" -> "1분 전" 등)
-        updateActivityTimes();
+            // 💡 추가: 5초마다 기존 항목들의 시간 텍스트를 최신화 ("방금 전" -> "1분 전" 등)
+            updateActivityTimes();
+        }
 
         statusDot.classList.remove("error");
-        monitorStatusText.textContent = "실시간 팔로워 감시 중";
+        monitorStatusText.textContent = monitoringMode === "public" ? "실시간 팔로워 감시 중 (조회 모드)" : "실시간 팔로워 감시 중";
 
         const now = new Date();
         const timeText = formatTime(now);
