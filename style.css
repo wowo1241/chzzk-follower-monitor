@@ -59,7 +59,7 @@ button {
     
     /* 💡 로고: 치지직 다크 배경에 네온그린 포인트 */
     background: #141517; 
-    color: #00ffa3;
+    color: #00c73c;
 }
 
 .login-card h1 {
@@ -111,12 +111,12 @@ button {
 .chzzk-button.primary {
     width: 100%;
     padding: 16px;
-    background: #00ffa3;
+    background: #00c73c;
     color: #111; 
     box-shadow: 0 4px 15px rgba(0, 255, 163, 0.2);
 }
 .chzzk-button.primary:hover {
-    background: #00e592;
+    background: #00a832;
     box-shadow: 0 6px 20px rgba(0, 255, 163, 0.3);
 }
 
@@ -163,7 +163,7 @@ button {
 }
 /* 입력창 클릭 시 치지직 네온 테두리 */
 .chzzk-input:focus {
-    border-color: #00ffa3;
+    border-color: #00c73c;
     background: #ffffff;
 }
 .chzzk-input::placeholder {
@@ -174,7 +174,7 @@ button {
 .chzzk-button.secondary {
     padding: 0 24px;
     background: #141517; 
-    color: #00ffa3; 
+    color: #00c73c; 
 }
 .chzzk-button.secondary:hover {
     background: #2a2b2e;
