@@ -329,14 +329,15 @@ button {
 
 /* 💡 Odometer 내부의 콤마(,) 위치와 색상 수정 */
 .odometer-formatting-mark {
-    font-size: 0.5em !important; /* 숫자의 절반 크기로 작게 */
-    opacity: 1 !important; /* 💡 회색(반투명) 원인 제거! 완전한 진한 색으로 표시 */
-    color: #111 !important; /* 숫자와 완벽히 동일한 색상 */
-    vertical-align: baseline !important; /* 💡 바닥 라인에 딱 맞게 정렬 */
+    font-size: 0.5em !important;
+    opacity: 1 !important;
+    color: #111 !important;
+    vertical-align: baseline !important;
     position: relative;
-    bottom: 0 !important; /* 💡 위로 떠오르던 현상 완벽 제거 */
-    margin: 0 4px !important; /* 콤마 좌우 간격 (필요시 조절) */
+    bottom: 0 !important;
+    margin: 0 4px !important;
 }
+
 /* ========================================= */
 /* 안내문구 CSS */
 /* ========================================= */
